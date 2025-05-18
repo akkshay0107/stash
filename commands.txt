@@ -1,0 +1,5 @@
+// normal run
+g++ -std=c++17 -O2 -o a && ./a
+
+// run with checks
+g++ -std=c++17 -Wall -o a -fsanitize=address,undefined -g -D_GLIBCXX_DEBUG && ./a
