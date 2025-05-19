@@ -7,6 +7,7 @@
 #  |  ├─ [problem_code].out (with -wf)
 
 TEMPLATE_SRC="$HOME/main/cpp/template.cpp"
+START_DIR=$PWD
 
 usage() {
   echo "Usage: $0 <problem_code> [-wf]"
@@ -55,6 +56,14 @@ handle_file_flag () {
   return 0
 }
 
+handle_no_file_flag () {
+  local problem_code="$1"
+  # Delete all lines commented for OJs that require output in stdout
+  # and input from stdin
+  sed -i '/\/\//d' "${problem_code}.cpp" || { echo "Error in sed"; return 1; }
+  return 0
+}
+
 if [ ! -f "$TEMPLATE_SRC" ]; then
   echo "Error: Template file not found at '$TEMPLATE_SRC'."
   exit 1
@@ -68,15 +77,20 @@ PROBLEM_CODE="$1"
 FLAG="$2"
 
 if [ -z "$FLAG" ]; then
-  create_folder "$PROBLEM_CODE" || exit 1
-elif [ "$FLAG" == "-wf" ]; then
-  # -wf is (with file IO)
   if create_folder "$PROBLEM_CODE"; then
-    handle_file_flag "$PROBLEM_CODE"
+    handle_no_file_flag "$PROBLEM_CODE" || { exit 1; }
   else
-    exit 1
+    echo "Error in creating problem folder."
+  fi
+elif [ $FLAG == "-wf" ]; then
+  if create_folder "$PROBLEM_CODE"; then
+    handle_file_flag "$PROBLEM_CODE" || { exit 1; }
+  else
+    echo "Error in creating problem folder."
   fi
 else
-  echo "Invalid second argument: '$FLAG'"
-  usage
+  echo "Invalid flag $FLAG";
+  exit 0;
 fi
+
+code "${START_DIR}/${PROBLEM_CODE}/${PROBLEM_CODE}.cpp"
