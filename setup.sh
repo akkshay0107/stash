@@ -93,4 +93,4 @@ else
   exit 0;
 fi
 
-code "${START_DIR}/${PROBLEM_CODE}/${PROBLEM_CODE}.cpp"
+code "${START_DIR}/${PROBLEM_CODE}/${PROBLEM_CODE}.cpp" && cd "${START_DIR}/${PROBLEM_CODE}"
