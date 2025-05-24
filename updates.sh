@@ -38,4 +38,4 @@ while IFS= read -r line; do
     if [ $? -ne 0 ]; then
         echo "Error: Copy failed: $SRC_PATH"
     fi
-done < "$LOC_FILE"
+done < "$LOC_PATH"

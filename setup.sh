@@ -6,6 +6,8 @@
 #  |  ├─ [problem_code].in (with -wf)
 #  |  ├─ [problem_code].out (with -wf)
 
+# run with source to get the final cd to run
+
 TEMPLATE_SRC="$HOME/main/cpp/template.cpp"
 START_DIR=$PWD
 
