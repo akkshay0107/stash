@@ -511,3 +511,43 @@ const ll hstring::B = uniform_int_distribution<ll>(1, M - 1)(rng);
 // O(1) query for idempotent (min,max)
 // stores value of function over [i, i + 2^j) for j <= LOG_U;
 // check cses/staticmin
+
+// centroid decomposition
+// example storing distance to each ancestor in centroid tree
+// rem[u] = if u removed from computation of centroid tree
+vector<pi> anc[U];
+
+int dfs(int u, int p){
+	sz[u] = 1;
+	for(auto v: adj[u]){
+		if(v!=p && !rem[v]) sz[u] += dfs(v,u);
+	}
+	return sz[u];
+}
+
+int centroid(int u,int p,int n){
+	for(auto v:adj[u]){
+		if(v==p || rem[v]) continue;
+		if(sz[v] > n/2) return centroid(v,u,n);
+	}
+	return u;
+}
+
+void find_dist(int u,int p,int c,int d){
+	for(int v: adj[u]){
+		if(v==p || rem[v]) continue;
+		find_dist(v,u,c,d+1);
+	}
+	anc[u].pb({c,d});
+}
+
+void build_ct(int u,int p){
+	int n = dfs(u,p);
+	int c = centroid(u,p,n);
+	find_dist(c,p,c,0);
+	rem[c] = true;
+	for (int v: adj[c]){
+		if(rem[v]) continue;
+		build_ct(v,c);
+	}
+}
