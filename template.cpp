@@ -6,7 +6,7 @@
 #define rrep(i,a,b) for(int i = a; i > (b); --i)
 #define sz(x) (int)(x).size()
 #define all(x) (x).begin(),(x).end()
-#define IN(i,l,r) (l<i&&i<r)
+#define IN(i,l,r) (l<=i&&i<=r)
 #define pb push_back
 #define ones __builtin_popcountll
 using namespace std;

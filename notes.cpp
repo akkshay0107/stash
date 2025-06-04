@@ -551,3 +551,37 @@ void build_ct(int u,int p){
 		build_ct(v,c);
 	}
 }
+
+// binary jumping + lca
+int l = ceil(log2(n));
+vector<vi> up(n+1, vi(l+1,0)); // up[u][k] = 2^k th ancestor of u
+vi d(n+1,0); // store all depths in d
+// store all parents in up[u][0]
+rep(i,1,l+1){
+    rep(j,1,n+1){
+        up[j][i] = up[up[j][i-1]][i-1];
+    }
+}
+// jumping up k ancestors
+auto jmp = [&](int x, int k) -> int {
+    if(k > dep[x]) return -1;
+    rrep(i,l,-1){
+        if(k&(1<<i)){
+            x = up[x][i];
+        }
+    }
+    return x;
+};
+
+auto lca = [&](int a,int b) -> int {
+    if(d[a] > d[b]) swap(a,b);
+    b = jmp(b, d[b]-d[a]);
+    if(a == b) return a;
+    rrep(i,l,-1){
+        if(up[a][i] != up[b][i]){
+            a = up[a][i];
+            b = up[b][i];
+        }
+    }
+    return up[a][0];
+}
