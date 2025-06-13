@@ -584,4 +584,13 @@ auto lca = [&](int a,int b) -> int {
         }
     }
     return up[a][0];
+};
+
+// fast max/min assignment
+void chkmax(int& x, int y) {
+    if(x < y) x = y;
+}
+
+void chkmin(int& x,int y) {
+    int (x > y) x = y;
 }

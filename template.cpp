@@ -13,10 +13,15 @@ using namespace std;
 using namespace __gnu_pbds;
 template <class T>
 using OSTree = tree<T,null_type,less<T>,rb_tree_tag,tree_order_statistics_node_update>;
+typedef long long ll;
 typedef pair<int,int> pi;
+typedef pair<long long, long long> pll;
 typedef vector<int> vi;
 typedef vector<long long> vll;
-typedef long long ll;
+typedef vector<vector<int>> vvi;
+typedef vector<vector<long long>> vvl;
+typedef vector<pair<int,int>> vpi;
+typedef vector<pair<long long,long long>> vpll;
 
 int main(){
 	cin.tie(0)->sync_with_stdio(false);
