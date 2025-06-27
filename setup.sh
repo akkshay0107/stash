@@ -60,18 +60,18 @@ handle_file_flag() {
     # Uncomment everything from the template and replace
     # .in and .out with io_name.in and io_name.out
     # for old USACO submissions
-    if ! sed -i 's#^// ##g' "${problem_code}.cpp"; then
-        echo "Error: Failed to modify template"
+    if ! sed -i 's#^\s*// ##g' "${problem_code}.cpp"; then
+        echo "Error: Failed to uncomment lines in ${problem_code}.cpp"
         return 1
     fi
     
     if ! sed -i "s/\\.in/${io_name}.in/g" "${problem_code}.cpp"; then
-        echo "Error: Failed to modify template"
+        echo "Error: Failed to replace .in with ${io_name}.in"
         return 1
     fi
     
     if ! sed -i "s/\\.out/${io_name}.out/g" "${problem_code}.cpp"; then
-        echo "Error: Failed to modify template"
+        echo "Error: Failed to replace .out with ${io_name}.out"
         return 1
     fi
     
@@ -83,7 +83,7 @@ handle_no_file_flag() {
     
     # Delete all lines commented for OJs that require output to stdout
     # and input from stdin
-    if ! sed -i '/^\/\//d' "${problem_code}.cpp"; then
+    if ! sed -i '/^\s*\/\//d' "${problem_code}.cpp"; then
         echo "Error: Failed to remove commented lines from ${problem_code}.cpp"
         return 1
     fi
@@ -143,7 +143,7 @@ main() {
     esac
     
     # Open in code and cd into created dir
-    code "${START_DIR}/${PROBLEM_CODE}/${PROBLEM_CODE}.cpp" && cd "${START_DIR}/${PROBLEM_CODE}"
+    code "${START_DIR}/${problem_code}/${problem_code}.cpp" && cd "${START_DIR}/${problem_code}"
 }
 
 main "$@"
