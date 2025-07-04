@@ -25,7 +25,7 @@ typedef vector<pair<int,int>> vpi;
 typedef vector<pair<long long,long long>> vpll;
 
 int main(){
-	cin.tie(0)->sync_with_stdio(false);
+	cin.tie(0)->sync_with_stdio(0);
 	// #ifndef zzz
 	//     freopen(".in","r",stdin);
 	//     freopen(".out","w",stdout);
