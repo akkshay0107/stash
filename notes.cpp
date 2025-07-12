@@ -90,9 +90,9 @@ void floyd(){
 }
 
 //prime factorization of numbers spf = smallest prime factor
-rep(i,2,U){
-    if(spf[i]==0) spf[i] = i;
-    for(ll j=(ll)i*i;j<U;j+=i){
+rep(i,2,U) if(!spf[i]) {
+    spf[i] = i;
+    for(ll j = (ll)i*i; j < U; j += i) {
         if(!spf[j]) spf[j] = i;
     }
 }
@@ -334,7 +334,7 @@ using OSTree = tree<T,null_type,less<T>,rb_tree_tag,tree_order_statistics_node_u
 OSTree<int> tree;
 tree.find_by_order(1)  // -> iterator for ith element 
 tree.order_of_key(5) // -> number of elements lesser than 5
-gp_hash_table<int,int> ht; //-> faster hash map
+gp_hash_table<int,int,chash> ht; //-> faster hash map
 // custom hash for hash table
 struct chash {
 	const uint64_t C = uint64_t(2e18 * 3.14) + 71;

@@ -10,6 +10,7 @@
 #define IN(i,l,r) ((l)<=(i)&&(i)<=(r))
 #define pb push_back
 #define ones __builtin_popcountll
+#define vt vector
 using namespace std;
 using namespace __gnu_pbds;
 template <class T>
@@ -21,8 +22,6 @@ typedef vector<int> vi;
 typedef vector<long long> vll;
 typedef vector<vector<int>> vvi;
 typedef vector<vector<long long>> vvl;
-typedef vector<pair<int,int>> vpi;
-typedef vector<pair<long long,long long>> vpll;
 
 int main(){
 	cin.tie(0)->sync_with_stdio(0);
