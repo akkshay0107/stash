@@ -295,7 +295,14 @@ struct FenwickTree{
 
 // segment tree (point update range query) {one indexed} [check cses/dynrangemin]
 // combine must be associative function [ideally O(1) combination]
-vi st(4*n,0);
+node st[4*U];
+
+node combine(const node& lft,const node& rgt){
+    node res;
+    // combine lft and rgt
+    return res;
+}
+
 void build(vi& a,int u,int tl,int tr){
     if(tl == tr) st[u] = a[tl];
     else{
@@ -304,7 +311,7 @@ void build(vi& a,int u,int tl,int tr){
         build(a, 2*u+1,tm+1,tr);
         st[u] = combine(st[2*u],st[2*u+1]);
     }
-}
+} // build(a,1,1,n)
 
 int get(int u,int tl,int tr,int l,int r){
     if(l <= tl && tr <= r) return st[u];
@@ -314,7 +321,7 @@ int get(int u,int tl,int tr,int l,int r){
         else if(r <= tm) return get(2*u,tl,tm,l,r);
         else return combine(get(2*u,tl,tm,l,r),get(2*u+1,tm+1,tr,l,r));
     }
-}
+} // get(1,1,n,L,R)
 
 void update(int u,int tl,int tr,int p,int val){
     if(tl == tr) st[u] = val;
@@ -324,7 +331,7 @@ void update(int u,int tl,int tr,int p,int val){
         else update(2*u+1,tm+1,tr,p,val);
         st[u] = combine(st[2*u],st[2*u+1]);
     } 
-}
+} // update(1,1,n,p,val)
 
 // Order Statistic Tree and Hash table 
 #include <ext/pb_ds/assoc_container.hpp>
@@ -593,4 +600,37 @@ void chkmax(int& x, int y) {
 
 void chkmin(int& x,int y) {
     int (x > y) x = y;
+}
+
+// trie
+const int ALPH; // size of alphabet
+struct node {
+    int down[ALPH];
+    // extra params
+};
+vt<node> trie;
+vt<bool> stop; // incase words have diff length
+
+void add(vt<node>& trie, string word) {
+    int cur = 0;
+    rep(i,0,sz(word)) {
+        int x = word[i] - 'a'; // whatever to get it in range [0,ALPH]
+        if(trie[cur].down[x] == -1) {
+            cur = trie[cur].down[x] = sz(trie);
+            trie.pb({});
+        } else cur = trie[cur].down[x];
+    }
+    stop[cur] = true;
+}
+
+int find(vt<node>& trie, string word) {
+    int cur = 0;
+    rep(i,0,sz(word)) {
+        int x = word[i] - 'a'; // whatever to get it in range [0,ALPH]
+        if(trie[cur].down[x] == -1) {
+            return -1
+        } else cur = trie[cur].down[x];
+    }
+    if(stop[cur]) return cur;
+    return -1;
 }
