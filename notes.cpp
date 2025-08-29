@@ -617,9 +617,10 @@ void add(vt<node>& trie, string word) {
     rep(i,0,sz(word)) {
         int x = word[i] - 'a'; // whatever to get it in range [0,ALPH]
         if(trie[cur].down[x] == -1) {
-            cur = trie[cur].down[x] = sz(trie);
+            trie[cur].down[x] = sz(trie);
             trie.pb({});
-        } else cur = trie[cur].down[x];
+        }
+        cur = trie[cur].down[x];
     }
     stop[cur] = true;
 }
