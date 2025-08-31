@@ -606,33 +606,103 @@ void chkmin(int& x,int y) {
 // trie
 const int ALPH; // size of alphabet
 struct node {
-    int down[ALPH];
+    int down[ALPH] = {};
+    int cnt = 0; // reference count
+    bool stop = false; // EOW
     // extra params
 };
 vt<node> trie;
-vt<bool> stop; // incase words have diff length
 
 void add(vt<node>& trie, string word) {
     int cur = 0;
     rep(i,0,sz(word)) {
         int x = word[i] - 'a'; // whatever to get it in range [0,ALPH]
-        if(trie[cur].down[x] == -1) {
+        if(!trie[cur].down[x]) {
             trie[cur].down[x] = sz(trie);
             trie.pb({});
         }
         cur = trie[cur].down[x];
+        trie[cur].cnt++;
     }
-    stop[cur] = true;
+    trie[cur].stop = true;
 }
 
 int find(vt<node>& trie, string word) {
     int cur = 0;
     rep(i,0,sz(word)) {
         int x = word[i] - 'a'; // whatever to get it in range [0,ALPH]
-        if(trie[cur].down[x] == -1) {
+        if(!trie[cur].down[x]) {
             return -1
         } else cur = trie[cur].down[x];
     }
-    if(stop[cur]) return cur;
+    if(cur.stop) return cur;
     return -1;
+}
+
+void del(vt<node>& trie, const string& word, int cur = 0, int i = 0) {
+    if (i == sz(word)) {
+        trie[cur].stop = false; // mark EOW as false
+        return;
+    }
+
+    int x = word[i] - 'a';
+    int nxt = trie[cur].down[x];
+    if (nxt == 0) {
+        return; // Word not found
+    }
+
+    del(trie, word, nxt, i + 1);
+    trie[nxt].cnt--;
+    if (trie[nxt].cnt == 0 && !trie[nxt].stop) {
+        trie[cur].down[x] = 0;
+    }
+}
+
+// fixed len bit trie
+struct node {
+    int down[2] = {};
+    int cnt = 0;
+    // extra params;
+};
+
+void add(vt<node>& trie, int x){
+    int c = 0;
+    rrep(i,30,-1){
+        trie[c].cnt++;
+        bool dir = (bool) (x & (1<<i));
+        if(!trie[c].down[dir]){
+            trie[c].down[dir] = sz(trie);
+            trie.pb({});
+        }
+        c = trie[c].down[dir];
+    }
+    trie[c].cnt++;
+
+}
+
+int find(vt<node>& trie, int x){
+    int c = 0;
+    rrep(i,30,-1){
+        if(x & (1<<i)){
+            // do smth
+        } else {
+            // do smth
+        }
+    }
+    return 0; // return smthing from the extra params
+}
+
+void del(vt<node>& trie, int x){
+    int c = 0;
+    rrep(i,30,-1){
+        trie[c].cnt--;
+        bool dir = (bool) (x & (1<<i));
+        int nx = trie[c].down[dir];
+        if(trie[nx].cnt == 1){
+            trie[c].down[dir] = 0;
+            return;
+        }
+        c = nx;
+    }
+    trie[c].cnt--;
 }
