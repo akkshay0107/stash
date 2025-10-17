@@ -11,6 +11,7 @@
 #define pb push_back
 #define ones __builtin_popcountll
 #define vt vector
+#define MULTI int _; cin >> _; while(_--)
 using namespace std;
 using namespace __gnu_pbds;
 template <class T>
