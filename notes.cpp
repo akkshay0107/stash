@@ -710,12 +710,20 @@ void del(vt<node>& trie, int x){
 // Finding 2 edge CCs
 // 2CC -> removing any edge from the components keeps it connected
 // equivalent to removing all bridges from the graph and checking connected components
-vi tin(n+1), low(n+1);
+vi tin(n+1), low(n+1), comp(n+1);
+vvi two_cc;
 int timer = 0;
+stack<int> st;
 auto dfs = [&](auto&& dfs, int u, int p) -> void {
     tin[u] = low[u] = ++timer;
+    st.push(u);
+    bool multiple_edges = false;
+
     trav(v, adj[u]) {
-        if(v == p) continue;
+        if (v == p && !multiple_edges) {
+			multiple_edges = true;
+			continue;
+		} // multiple edges only for a multigraph otherwise we can remove this section
         if(!tin[v]) {
             dfs(dfs,v,u);
             low[u] = min(low[u], low[v]);
@@ -723,25 +731,21 @@ auto dfs = [&](auto&& dfs, int u, int p) -> void {
             low[u] = min(low[u], tin[v]);
         }
     }
-};
-
-vt<bool> vis(n+1, false);
-auto get_tcc = [&](auto&& get_tcc, int u, vi& cc) -> void {
-    vis[u] = true;
-    cc.pb(u);
-    trav(v, adj[u]){
-        if(vis[v]) continue;
-        if(low[v] <= tin[u]) {
-            get_tcc(get_tcc,v,cc);
+    if(tin[u] == low[u]) {
+        two_cc.emplace_back();
+        while(st.top() != u) {
+            two_cc.back().pb(st.top());
+            comp[st.top()] = sz(two_cc);
+            st.pop();
         }
+        two_cc.back().pb(st.top());
+        comp[st.top()] = sz(two_cc);
+        st.pop();
     }
 };
 
-dfs(dfs,1,1);
-vvi two_cc;
 rep(i,1,n+1) {
-    if(!vis[i]) {
-        two_cc.emplace_back();
-        get_tcc(get_tcc, i, two_cc.back());
+    if(!comp[i]) {
+        dfs(dfs, i, i);
     }
 }
