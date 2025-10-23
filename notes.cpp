@@ -749,3 +749,16 @@ rep(i,1,n+1) {
         dfs(dfs, i, i);
     }
 }
+
+// fisher yates partial shuffle
+// assumes res is preset to size k
+// popl = population vector
+mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count());
+auto fisher_yates = [&popl](vi& res, int k) -> void {
+    rep(i,0,k){
+        uniform_int_distribution<> dist(i,sz(popl)-1);
+        int j = dist(rng);
+        swap(popl[i], popl[j]);
+    }
+    rep(i,0,k) res[i] = popl[i];
+};
