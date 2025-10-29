@@ -304,35 +304,35 @@ node combine(const node& lft,const node& rgt){
     return res;
 }
 
-void build(vi& a,int u,int tl,int tr){
-    if(tl == tr) st[u] = a[tl];
-    else{
-        int tm = (tl+tr)/2;
-        build(a, 2*u,tl,tm);
-        build(a, 2*u+1,tm+1,tr);
-        st[u] = combine(st[2*u],st[2*u+1]);
-    }
-} // build(a,1,1,n)
+void build(vi& a, int tr, int tl = 1, int u = 1) {
+	if(tl == tr) {
+		seg[u] = a[tl];
+		return;
+	}
+	int tm = (tl + tr)/2;
+	build(a,tr,tm+1,2*u);
+	build(a,tm,tl,2*u+1);
+	st[u] = combine(st[2*u],st[2*u+1]);
+} // build(a,n)
 
-int get(int u,int tl,int tr,int l,int r){
+int get(int l, int r, int tr, int tl = 1, int u = 1){
     if(l <= tl && tr <= r) return st[u];
-    else{
-        int tm = (tl+tr)/2;
-        if(l > tm) return get(2*u+1,tm+1,tr,l,r);
-        else if(r <= tm) return get(2*u,tl,tm,l,r);
-        else return combine(get(2*u,tl,tm,l,r),get(2*u+1,tm+1,tr,l,r));
-    }
-} // get(1,1,n,L,R)
+    int tm = (tl + tr)/2;
+    if(l > tm) return get(l,r,tr,tm+1,2*u+1);
+    if(r <= tm) return get(l,r,tm,tl,2*u);
+    return combine(get(l,r,tm,tl,2*u),get(l,r,tr,tm+1,2*u+1));
+} // get(l,r,n)
 
-void update(int u,int tl,int tr,int p,int val){
-    if(tl == tr) st[u] = val;
-    else{
-        int tm = (tl + tr)/2;
-        if(p <= tm) update(2*u,tl,tm,p,val);
-        else update(2*u+1,tm+1,tr,p,val);
-        st[u] = combine(st[2*u],st[2*u+1]);
-    } 
-} // update(1,1,n,p,val)
+void update(int p, int v, int tr, int tl = 1, int u = 1){
+    if(tl == tr){
+        st[u] = v;
+        return;
+    }    
+    int tm = (tl + tr)/2;
+    if(p <= m) update(p,v,tm,tl,2*u);
+    else update(p,v,tr,tm+1,tr,2*u+1);
+    st[u] = combine(st[2*u],st[2*u+1]);
+} // update(p,v,n)
 
 // Order Statistic Tree and Hash table 
 #include <ext/pb_ds/assoc_container.hpp>
@@ -731,6 +731,7 @@ auto dfs = [&](auto&& dfs, int u, int p) -> void {
             low[u] = min(low[u], tin[v]);
         }
     }
+    
     if(tin[u] == low[u]) {
         two_cc.emplace_back();
         while(st.top() != u) {
@@ -762,3 +763,8 @@ auto fisher_yates = [&popl](vi& res, int k) -> void {
     }
     rep(i,0,k) res[i] = popl[i];
 };
+
+// full shuffle
+mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count());
+vi arr(n);
+shuffle(all(arr), rng);
