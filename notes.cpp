@@ -296,43 +296,39 @@ struct FenwickTree{
 
 // segment tree (point update range query) {one indexed} [check cses/dynrangemin]
 // combine must be associative function [ideally O(1) combination]
+// replaced with fast iterative seg tree
 node st[4*U];
 
-node combine(const node& lft,const node& rgt){
-    node res;
-    // combine lft and rgt
-    return res;
-}
-
-void build(vi& a, int tr, int tl = 1, int u = 1) {
-	if(tl == tr) {
-		seg[u] = a[tl];
-		return;
-	}
-	int tm = (tl + tr)/2;
-	build(a,tr,tm+1,2*u);
-	build(a,tm,tl,2*u+1);
-	st[u] = combine(st[2*u],st[2*u+1]);
-} // build(a,n)
-
-int get(int l, int r, int tr, int tl = 1, int u = 1){
-    if(l <= tl && tr <= r) return st[u];
+void build(vi& a, int u, int tl, int tr) {
+    if(tl == tr) {
+        st[u] = a[tl];
+        return;
+    }
     int tm = (tl + tr)/2;
-    if(l > tm) return get(l,r,tr,tm+1,2*u+1);
-    if(r <= tm) return get(l,r,tm,tl,2*u);
-    return combine(get(l,r,tm,tl,2*u),get(l,r,tr,tm+1,2*u+1));
-} // get(l,r,n)
+    build(a,2*u,tl,tm);
+    build(a,2*u+1,tm+1,tr);
+    st[u] = combine(st[2*u], st[2*u+1]);
+} // build(a,1,1,n)
 
-void update(int p, int v, int tr, int tl = 1, int u = 1){
-    if(tl == tr){
+node get(int l, int r, int u, int tl, int tr) {
+    if(l <= tl && tr <= r) return st[u];
+    if(l > tr || r < tl) return null; // identity op
+    int tm = (tl + tr)/2;
+    if(r <= tm) return get(l,r,2*u,tl,tm);
+    else if(l > tm) return get(l,r,2*u+1,tm+1,tr);
+    else return combine(get(l,r,2*u,tl,tm), get(l,r,2*u+1,tm+1,tr));
+} // get(l,r,1,1,n)
+
+void update(int p, int v, int u, int tl, int tr) {
+    if(tl == tr) {
         st[u] = v;
         return;
-    }    
+    }
     int tm = (tl + tr)/2;
-    if(p <= m) update(p,v,tm,tl,2*u);
-    else update(p,v,tr,tm+1,tr,2*u+1);
-    st[u] = combine(st[2*u],st[2*u+1]);
-} // update(p,v,n)
+    if(p <= tm) update(p,v,2*u,tl,tm);
+    else update(p,v,2*u+1,tm+1,tr);
+    st[u] = combine(st[2*u], st[2*u+1]);
+} // update(p,v,1,1,n)
 
 // Order Statistic Tree and Hash table 
 #include <ext/pb_ds/assoc_container.hpp>
