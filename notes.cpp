@@ -764,3 +764,44 @@ auto fisher_yates = [&popl](vi& res, int k) -> void {
 mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count());
 vi arr(n);
 shuffle(all(arr), rng);
+
+// SCC + condensation graph (Kosaraju)
+vvi g, gt;
+vt<bool> vis(n+1, false);
+auto dfs = [&](auto&& dfs, int u, vvi& adj, vi& out) -> void {
+    vis[u] = true;
+    trav(v, adj[u]) if(!vis[v]) {
+        dfs(dfs,v,adj,out);
+    }
+    out.pb(u);
+};
+
+vvi comps, gscc;
+auto scc = [&]() -> void {
+    vi order;
+    rep(i,1,n+1) if(!vis[i]) dfs(dfs,i,g,order);
+
+    vis.assign(n+1,false);
+    reverse(all(order));
+    vi roots(n+1,0);
+
+    trav(v,order) {
+        if(vis[v]) continue;
+        vi cc;
+        dfs(dfs,v,gt,cc);
+        comps.pb(cc);
+        trav(x,cc) roots[x] = sz(comps);
+    }
+
+    gscc.assign(n+1, {});
+    rep(i,1,n+1) {
+        int ru = roots[i];
+        trav(v, g[i]) {
+            int rv = roots[v];
+            if(ru != rv) gscc[ru].pb(rv); // edge from SCC(ru) to SCC(rv)
+        }
+    }
+    // optional: remove duplicates
+    rep(i,1,n+1)
+        sort(all(gscc[i])), gscc[i].erase(unique(all(gscc[i])), gscc[i].end());
+};
