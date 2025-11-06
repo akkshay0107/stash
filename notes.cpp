@@ -766,7 +766,6 @@ vi arr(n);
 shuffle(all(arr), rng);
 
 // SCC + condensation graph (Kosaraju)
-vvi g, gt;
 vt<bool> vis(n+1, false);
 auto dfs = [&](auto&& dfs, int u, vvi& adj, vi& out) -> void {
     vis[u] = true;
@@ -784,24 +783,29 @@ auto scc = [&]() -> void {
     vis.assign(n+1,false);
     reverse(all(order));
     vi roots(n+1,0);
+    comps.pb({});
 
     trav(v,order) {
         if(vis[v]) continue;
         vi cc;
         dfs(dfs,v,gt,cc);
+        trav(x,cc) {
+            roots[x] = sz(comps);
+        }
         comps.pb(cc);
-        trav(x,cc) roots[x] = sz(comps);
     }
 
-    gscc.assign(n+1, {});
+    gscc.assign(sz(comps), {});
     rep(i,1,n+1) {
         int ru = roots[i];
         trav(v, g[i]) {
             int rv = roots[v];
-            if(ru != rv) gscc[ru].pb(rv); // edge from SCC(ru) to SCC(rv)
+            if(ru != rv) gscc[ru].pb(rv);
         }
     }
-    // optional: remove duplicates
-    rep(i,1,n+1)
+    // optional: remove duplicate connections
+    rep(i,1,sz(comps))
         sort(all(gscc[i])), gscc[i].erase(unique(all(gscc[i])), gscc[i].end());
 };
+
+// check 2SAT in cses/giantpizza
