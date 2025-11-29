@@ -5,7 +5,7 @@
 #define rep(i,a,b) for(int i = (a); i < (b); ++i)
 #define rrep(i,a,b) for(int i = (a); i > (b); --i)
 #define trav(x,a) for(auto& x:a)
-#define sz(x) (int)(x).size()
+#define sz(x) (long long)(x).size()
 #define all(x) (x).begin(),(x).end()
 #define IN(i,l,r) ((l)<=(i)&&(i)<=(r))
 #define pb push_back

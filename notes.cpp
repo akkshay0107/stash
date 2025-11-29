@@ -806,6 +806,6 @@ auto scc = [&]() -> void {
     // optional: remove duplicate connections
     rep(i,1,sz(comps))
         sort(all(gscc[i])), gscc[i].erase(unique(all(gscc[i])), gscc[i].end());
-};
+}; // kosaraju outputs SCCs in topologically sorted order
 
 // check 2SAT in cses/giantpizza
