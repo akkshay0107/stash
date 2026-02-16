@@ -8,29 +8,6 @@ int lis(vi& a){
     return sz(dp);
 }
 
-// recursive dfs
-void dfs(int u){
-    vis[u] = true;
-    // do some function on u
-    for(auto &v : adj[u]){
-        if(!vis[v]){
-            // do some function on v
-            dfs(v);
-        }
-    }
-}
-
-// recursive dfs on trees
-void dfs(int u, int p){
-    // do some function on u
-    for(auto &v : adj[u]){
-        if(v != p){
-            // do some function on v
-            dfs(v,u);
-        }
-    }
-}
-
 //bfs
 queue<int> bfs;
 while(!bfs.empty()){
@@ -53,9 +30,10 @@ while(!bfs.empty()){
     pi c = bfs.front(); bfs.pop();
     // do some function on u
     rep(k,0,4){
-        pi b = {c.fr+dx[k],c.se+dy[k]};
-        if(IN(b.fr,-1,n) && IN(b.se,-1,m) && !vis[b.fr][b.se]){
-            bfs.push(b);
+        int xx = c.fr + dx[k];
+        int yy = c.se + dy[k];
+        if(IN(xx,-1,n) && IN(yy,-1,m) && !vis[xx][yy]){
+            bfs.push({xx, yy});
         }
     }
 }
@@ -67,15 +45,16 @@ void floyd(){
     // f(i + k*lambda) = f(i)
     // set i = k*lambda => f(2k*lambda) = f(lambda)
     // b -> 2k*lambda and a = k*lambda
-    int a=succ(0),b=succ(succ(0));
-    while(a!=b){
+    int a = succ(0);
+    int b = succ(succ(0));
+    while(a != b){
         a = succ(a);
         b = succ(succ(b));
     }
     a = 0;
     // a -> mu , b -> mu + 2k*lambda
-    int mu=0;
-    while(a!=b){
+    int mu = 0;
+    while(a != b){
         a = succ(a);
         b = succ(b);
         ++mu;
@@ -83,7 +62,7 @@ void floyd(){
     // a -> mu , b goes from mu + 1 till mu + lambda
     int lambda = 1;
     b = succ(a);
-    while(a!=b){
+    while(a != b){
         b = succ(b); ++lambda;
     }
     // start of cycle = mu, cycle length = lambda
@@ -105,7 +84,7 @@ rep(i,0,n){
 }
 
 //binary exponentiation a^b
-ll exp(ll a,ll b){
+ll exp(ll a, ll b){
     ll res = 1;
     while(b){
         if(b&1){ res = res*a; res %= M;}
@@ -190,9 +169,9 @@ if(sz(order)!=n) // no valid topo sort
 else{} // order contains topo sort
 
 // dijkstra
-vector<ll> dist(U,LLONG_MAX);
+vll dist(U,LLONG_MAX);
 using T = pair<ll,int>;
-priority_queue<T,vector<T>,greater<T>> pq;
+priority_queue<T,vt<T>,greater<T>> pq;
 dist[1] = 0;
 pq.push({0,1});
 while(!pq.empty()){
@@ -226,31 +205,31 @@ rep(k,1,n+1){
 }
 
 // kruskal mst
-vector<pair<ll,pi>> edges;
+vt<pair<ll,pi>> edges;
 sort(all(edges));
 DSU ds; ds.init(n);
 ll cost = 0;
-vector<pair<ll,pi>> mst;
+vt<pair<ll,pi>> mst;
 for(auto edge: edges){
     if(ds.unite(edge.se.fr,edge.se.se)){
         cost += edge.fr;
         mst.pb({edge.fr,{edge.se.fr,edge.se.se}});
     }
-    if(sz(mst)==n-1) break;
+    if(sz(mst) == n-1) break;
 }
 
 // prims mst for dense graphs O(V^2)
 adj[U][U];
 bool vis[U];
-vector<pi> min_e(U,{M,-1});
+vt<pi> min_e(U,{M,-1});
 ll cost = 0;
 min_e[0].fr = 0; // 0 chosen to be root of mst;
 rep(i,0,n){
     int v = -1;
     rep(j,0,n)[
-        if(!vis[j]&&(v==-1||min_e[j].fr<min_e[v].fr)) v = j;
+        if(!vis[j] && (v == -1 || min_e[j].fr < min_e[v].fr)) v = j;
     ]
-    if(v==-1 || min_e[v].fr == M){
+    if(v ==-1 || min_e[v].fr == M){
         cost = -1; break; // no mst possible;
     }
     vis[v] = true;
@@ -269,10 +248,10 @@ rep(i,0,n){
 // fenwick tree (point update range sum) {one indexed}
 // i & (-i) gives us least significant bit
 struct FenwickTree{
-    vector<ll> bit; int n;
+    vt<ll> bit; int n;
     // O(n) construction
-    void init(const vector<ll>& a){
-        bit = vector<ll>(sz(a),0);
+    void init(const vt<ll>& a){
+        bit = vt<ll>(sz(a),0);
         n = sz(a);
         rep(i,1,n){
             bit[i] += a[i];
@@ -351,7 +330,7 @@ struct chash {
 
 // Finding Bridges
 int t = 0; 
-vector<pi> bridges;
+vt<pi> bridges;
 vi tin, low; // low -> lowest back edge ancestor of node in dfs tree
 // tin -> entry time
 void dfs(int u,int p = 0){
@@ -496,7 +475,7 @@ class hstring {
 	__int128 mul(ll a, ll b) { return (__int128)a * b; }
 	ll mod_mul(ll a, ll b) { return mul(a, b) % M; }
   public:
-	hstring(const string &s) : p_hash(s.size() + 1) {
+	hstring(const string& s) : p_hash(s.size() + 1) {
 		while (pow.size() <= s.size()) { pow.push_back(mod_mul(pow.back(), B)); }
 		p_hash[0] = 0;
 		rep(i,0,sz(s)) p_hash[i + 1] = (mul(p_hash[i], B) + s[i]) % M;
@@ -519,7 +498,7 @@ const ll hstring::B = uniform_int_distribution<ll>(1, M - 1)(rng);
 // centroid decomposition
 // example storing distance to each ancestor in centroid tree
 // rem[u] = if u removed from computation of centroid tree
-vector<pi> anc[U];
+vt<pi> anc[U];
 
 int dfs(int u, int p){
 	sz[u] = 1;
@@ -529,9 +508,9 @@ int dfs(int u, int p){
 	return sz[u];
 }
 
-int centroid(int u,int p,int n){
-	for(auto v:adj[u]){
-		if(v==p || rem[v]) continue;
+int centroid(int u, int p, int n){
+	for(auto v : adj[u]){
+		if(v == p || rem[v]) continue;
 		if(sz[v] > n/2) return centroid(v,u,n);
 	}
 	return u;
@@ -539,7 +518,7 @@ int centroid(int u,int p,int n){
 
 void find_dist(int u,int p,int c,int d){
 	for(int v: adj[u]){
-		if(v==p || rem[v]) continue;
+		if(v == p || rem[v]) continue;
 		find_dist(v,u,c,d+1);
 	}
 	anc[u].pb({c,d});
@@ -558,7 +537,7 @@ void build_ct(int u,int p){
 
 // binary jumping + lca
 int l = ceil(log2(n));
-vector<vi> up(n+1, vi(l+1,0)); // up[u][k] = 2^k th ancestor of u
+vvi up(n+1, vi(l+1,0)); // up[u][k] = 2^k th ancestor of u
 vi d(n+1,0); // store all depths in d
 // store all parents in up[u][0]
 rep(i,1,l+1){
