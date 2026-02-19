@@ -308,7 +308,7 @@ struct FenwickTree{
     // check cses/dynrangesum for updates
 };
 
-// segment tree (point update range query) {one indexed} [check cses/dynrangemin]
+// segment tree (point update range query) {zero indexed} [check cses/dynrangemin]
 // combine must be associative function [ideally O(1) combination]
 node seg[2*U];
 int n;
@@ -323,7 +323,7 @@ void upd(int p, int v) {
     seg[p] = v;
     while(p > 1) {
         p >>= 1;
-        seg[p] = combine(seg[2*p], seg[2*p+1])
+        seg[p] = combine(seg[2*p], seg[2*p+1]);
     }
 }
 
@@ -336,6 +336,21 @@ node get(int l, int r) {
         if(r&1) resr = combine(seg[--r], resr);
     }
     return combine(resl, resr);
+}
+
+// from cses/hotelqueries first >= x
+// needs padding to power of 2
+node walk(int x) {
+    int p = 1, lo = 0, hi = n-1;
+    while(hi > lo) {
+        int m = (lo + hi)/2;
+        if(seg[2*p] >= x) {
+            p = 2*p; hi = m;
+        } else {
+            p = 2*p+1; lo = m+1;
+        }
+    }
+    return seg[p] >= x ? lo : -1;
 }
 
 // Order Statistic Tree and Hash table 
