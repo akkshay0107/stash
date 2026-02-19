@@ -1,3 +1,12 @@
+// fast max/min assignment
+void chkmax(int& x, int y) {
+    if(x < y) x = y;
+}
+
+void chkmin(int& x,int y) {
+    int (x > y) x = y;
+}
+
 int lis(vi& a){
     vi dp;
     for(int v:a){
@@ -6,20 +15,6 @@ int lis(vi& a){
         else dp[pos] = v;
     }
     return sz(dp);
-}
-
-//bfs
-queue<int> bfs;
-while(!bfs.empty()){
-    int u = bfs.front(); bfs.pop();
-    // do some function on u
-    vis[u] = true;
-    for(auto &v : adj[u]){
-        if(!vis[v]){
-            // do some function on v
-            bfs.push(v);
-        }
-    }
 }
 
 //flood fill bfs
@@ -60,8 +55,7 @@ void floyd(){
         ++mu;
     }
     // a -> mu , b goes from mu + 1 till mu + lambda
-    int lambda = 1;
-    b = succ(a);
+    int lambda = 1; b = succ(a);
     while(a != b){
         b = succ(b); ++lambda;
     }
@@ -75,20 +69,13 @@ rep(i,2,U) if(!spf[i]) {
         if(!spf[j]) spf[j] = i;
     }
 }
-rep(i,0,n){
-    int temp = a[i];
-    while(temp != 1){
-        factors[a[i]].pb(spf[temp]);
-        temp /= spf[temp];
-    }
-}
 
 //binary exponentiation a^b
 ll exp(ll a, ll b){
     ll res = 1;
     while(b){
-        if(b&1){ res = res*a; res %= M;}
-        a = a*a; a %= M;
+        if(b&1) res = (res * a) % M;
+        a = (a * a) % M;
         b >>= 1;
     }
     return res;
@@ -99,8 +86,48 @@ ll inv(ll i) {
 	return i <= 1 ? i : M - (ll)(M/i) * inv(M % i) % M;
 }
 
+// Euler totient O(sqrt(n))
+int phi(int n){
+    int ans = n;
+    for(int p = 2; p*p <= n; ++p){
+        if(n%p == 0){
+            while(n%p == 0) n /= p;
+            ans -= ans/p;
+        }
+    }
+    if(n > 1) ans -= ans/n;
+    return ans;
+}
+
+// Extended Euclidean (x and y passed by ref)
+int ext_gcd(int a,int b,int& x,int& y){
+    if(b == 0){
+        x = 1; y = 0;
+        return a;
+    }
+    int xx,yy;
+    int g = ext_gcd(b,a%b,xx,yy);
+    x = yy;
+    y = xx - yy*(a/b);
+    return g;
+}
+
+// nCr computation in O(n + log M)
+ll F[U], iF[U];
+F[0] = F[1] = 1
+rep(i,2,U) F[i] = (i*F[i-1])%M;
+
+iF[U-1] = inv(F[U-1]);
+rrep(i,U-2,-1) iF[i] = ((i+1)*iF[i+1])%M;
+
+ll C(int n, int r){
+    if(!r) return 1;
+    else if(r < 0 || r > n) return 0;
+    return (F[n]*iF[r]%M)*iF[n-r]%M;
+}
+
 // 0-1 bfs
-ll dist[U];
+ll d[U];
 d[root] = 0;
 deque<int> q;
 q.push_front(root);
@@ -108,8 +135,8 @@ while(q.size()){
     int c = q.front(); q.pop_front();
     for(auto edge: adj[c]){
         int v = edge.fr; int w = edge.se;
-        if(d[v] > d[c]+w){
-            d[v] = d[c]+w;
+        if(d[v] > d[c] + w){
+            d[v] = d[c] + w;
             // if weight is 0 then node comes to front of deque
             // if weight is 1 then node goes to back to deque
             // remains sorted
@@ -134,21 +161,21 @@ struct DSU {
 };
 
 // topo sort - dfs
-vi ans;
+vi order;
 void dfs(int u){
     vis[u] = true;
     for(auto v:adj[u]){
         if(!vis[v]) dfs(v);
     }
-    ans.pb(u);
+    order.pb(u);
 }
 void topo_sort(){
-    ans.clear(); vis = {};
+    order.clear(); vis = {};
     rep(i,0,n){
         if(!vis[i]) dfs(i);
     }
-    reverse(all(ans));
-}
+    reverse(all(order));
+} // ans contains toposort
 
 // topo sort - bfs (kahn's algo)
 queue<int> q;
@@ -162,7 +189,7 @@ while(!q.empty()){
     order.pb(c);
     for(auto v:adj[c]){
         indegree[v]--;
-        if(indegree[v]==0) q.push(v);
+        if(!indegree[v]) q.push(v);
     }
 }
 if(sz(order)!=n) // no valid topo sort
@@ -192,30 +219,38 @@ rep(i,1,n+1){
 }
 rep(i,0,m){
     int a,b; ll c; cin >> a >> b >> c;
-    dist[a][b] = min(dist[a][b],c); 
-    dist[b][a] = dist[a][b];
+    chkmin(dist[a][b], c);
+    // dist[b][a] = dist[a][b]; if undirected
 }
+
 rep(i,1,n+1) dist[i][i] = 0;
+
 rep(k,1,n+1){
     rep(i,1,n+1){
         rep(j,1,n+1){
-            dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j]);
+            chkmin(dist[i][j], dist[i][k] + dist[k][j]);
         }
     }
 }
 
 // kruskal mst
-vt<pair<ll,pi>> edges;
-sort(all(edges));
-DSU ds; ds.init(n);
+struct Edge {
+    int u,v,w;
+};
+
+vt<Edge> edges;
+sort(all(edges), [](Edge& a, Edge& b) {return a.w < b.w});
+
+DSU ds(n);
 ll cost = 0;
-vt<pair<ll,pi>> mst;
-for(auto edge: edges){
-    if(ds.unite(edge.se.fr,edge.se.se)){
-        cost += edge.fr;
-        mst.pb({edge.fr,{edge.se.fr,edge.se.se}});
+vt<Edge> mst;
+
+for(auto e: edges){
+    if(ds.unite(e.u e.v)) {
+        cost += e.w;
+        mst.pb(e);
+        if(sz(mst) == n-1) break;
     }
-    if(sz(mst) == n-1) break;
 }
 
 // prims mst for dense graphs O(V^2)
@@ -236,7 +271,7 @@ rep(i,0,n){
     cost += min_e[v].fr;
     if(min_e[v].se != -1){} // then valid edge of mst formed.
     rep(to,0,n){
-        if(adj[v][to]<min_e[to].fr){
+        if(adj[v][to] < min_e[to].fr) {
             min_e[to] = {adj[v][to],v};
         }
     }
@@ -264,10 +299,10 @@ struct FenwickTree{
         for(;r > 0;r -= r & (-r)) ret += bit[r];
         return ret;
     }
-    ll sum(int l,int r){
+    ll sum(int l, int r){
         return sum(r) - sum(l-1);
     }
-    void add(int x,ll delta){
+    void add(int x, ll delta){
         for(;x < n;x += x & (-x)) bit[x] += delta;
     }
     // check cses/dynrangesum for updates
@@ -275,39 +310,33 @@ struct FenwickTree{
 
 // segment tree (point update range query) {one indexed} [check cses/dynrangemin]
 // combine must be associative function [ideally O(1) combination]
-// replaced with fast iterative seg tree
-node st[4*U];
+node seg[2*U];
+int n;
 
-void build(vi& a, int u, int tl, int tr) {
-    if(tl == tr) {
-        st[u] = a[tl];
-        return;
+void build(vt<node>& a) {
+    rep(i,0,n) seg[n+i] = a[i];
+    rrep(i,n-1,0) seg[i] = combine(seg[2*i], seg[2*i+1]);
+}
+
+void upd(int p, int v) {
+    p += n;
+    seg[p] = v;
+    while(p > 1) {
+        p >>= 1;
+        seg[p] = combine(seg[2*p], seg[2*p+1])
     }
-    int tm = (tl + tr)/2;
-    build(a,2*u,tl,tm);
-    build(a,2*u+1,tm+1,tr);
-    st[u] = combine(st[2*u], st[2*u+1]);
-} // build(a,1,1,n)
+}
 
-node get(int l, int r, int u, int tl, int tr) {
-    if(l <= tl && tr <= r) return st[u];
-    if(l > tr || r < tl) return null; // identity op
-    int tm = (tl + tr)/2;
-    if(r <= tm) return get(l,r,2*u,tl,tm);
-    else if(l > tm) return get(l,r,2*u+1,tm+1,tr);
-    else return combine(get(l,r,2*u,tl,tm), get(l,r,2*u+1,tm+1,tr));
-} // get(l,r,1,1,n)
-
-void update(int p, int v, int u, int tl, int tr) {
-    if(tl == tr) {
-        st[u] = v;
-        return;
+// [l, r) queries
+node get(int l, int r) {
+    node resl, resr; // identity
+    l += n; r += n;
+    for(; l < r; l >>= 1, r >>= 1) {
+        if(l&1) resl = combine(resl, seg[l++]);
+        if(r&1) resr = combine(seg[--r], resr);
     }
-    int tm = (tl + tr)/2;
-    if(p <= tm) update(p,v,2*u,tl,tm);
-    else update(p,v,2*u+1,tm+1,tr);
-    st[u] = combine(st[2*u], st[2*u+1]);
-} // update(p,v,1,1,n)
+    return combine(resl, resr);
+}
 
 // Order Statistic Tree and Hash table 
 #include <ext/pb_ds/assoc_container.hpp>
@@ -424,45 +453,6 @@ vi get_phi(int n){
     return phi;
 }
 
-// Euler totient O(sqrt(n))
-int phi(int n){
-    int ans = n;
-    for(int p = 2; p*p <= n; ++p){
-        if(n%p == 0){
-            while(n%p == 0) n /= p;
-            ans -= ans/p;
-        }
-    }
-    if(n > 1) ans -= ans/n;
-    return ans;
-}
-
-// Extended Euclidean (x and y passed by ref)
-int ext_gcd(int a,int b,int& x,int& y){
-    if(b == 0){
-        x = 1; y = 0;
-        return a;
-    }
-    int xx,yy;
-    int g = ext_gcd(b,a%b,xx,yy);
-    x = yy;
-    y = xx - yy*(a/b);
-    return g;
-}
-
-// nCr computation in O(n + log M)
-ll F[U], iF[U];
-F[0] = F[1] = 1;
-rep(i,2,U) F[i] = (i*F[i-1])%M;
-iF[U-1] = inv(F[U-1]);
-rrep(i,U-2,-1) iF[i] = ((i+1)*iF[i+1])%M;
-
-ll C(int n, int r){
-    if(!r) return 1;
-    else if(r < 0 || r > n) return 0;
-    return (F[n]*iF[r]%M)*iF[n-r]%M;
-}
-
 // rolling hash for strings
 class hstring {
   private:
@@ -536,11 +526,11 @@ void build_ct(int u,int p){
 }
 
 // binary jumping + lca
-int l = ceil(log2(n));
-vvi up(n+1, vi(l+1,0)); // up[u][k] = 2^k th ancestor of u
+int L = ceil(log2(n));
+vvi up(n+1, vi(L+1,0)); // up[u][k] = 2^k th ancestor of u
 vi d(n+1,0); // store all depths in d
 // store all parents in up[u][0]
-rep(i,1,l+1){
+rep(i,1,L+1){
     rep(j,1,n+1){
         up[j][i] = up[up[j][i-1]][i-1];
     }
@@ -548,7 +538,7 @@ rep(i,1,l+1){
 // jumping up k ancestors
 auto jmp = [&](int x, int k) -> int {
     if(k > dep[x]) return -1;
-    rrep(i,l,-1){
+    rrep(i,L,-1){
         if(k&(1<<i)){
             x = up[x][i];
         }
@@ -558,9 +548,9 @@ auto jmp = [&](int x, int k) -> int {
 
 auto lca = [&](int a,int b) -> int {
     if(d[a] > d[b]) swap(a,b);
-    b = jmp(b, d[b]-d[a]);
+    b = jmp(b, d[b] - d[a]);
     if(a == b) return a;
-    rrep(i,l,-1){
+    rrep(i,L,-1){
         if(up[a][i] != up[b][i]){
             a = up[a][i];
             b = up[b][i];
@@ -568,15 +558,6 @@ auto lca = [&](int a,int b) -> int {
     }
     return up[a][0];
 };
-
-// fast max/min assignment
-void chkmax(int& x, int y) {
-    if(x < y) x = y;
-}
-
-void chkmin(int& x,int y) {
-    int (x > y) x = y;
-}
 
 // trie
 const int ALPH; // size of alphabet
