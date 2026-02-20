@@ -1,10 +1,10 @@
-// fast max/min assignment
-void chkmax(int& x, int y) {
-    if(x < y) x = y;
+// fast min/max assignment
+template<class T> bool chmin(T& a, const T& b) {
+    return b < a ? a = b, 1 : 0;
 }
 
-void chkmin(int& x,int y) {
-    int (x > y) x = y;
+template<class T> bool chmax(T& a, const T& b) {
+    return a < b ? a = b, 1 : 0;
 }
 
 int lis(vi& a){
