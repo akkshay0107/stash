@@ -784,3 +784,69 @@ auto scc = [&]() -> void {
 }; // kosaraju outputs SCCs in topologically sorted order
 
 // check 2SAT in cses/giantpizza
+
+// lazy seg (range add, range min)
+// check cses/rangeupdateandsum for more complex node propagation
+int seg[4*n], lazy[4*n];
+
+void build(vi& a, int u = 1, int tl = 1, int tr = n) {
+	if(tl == tr) {
+		seg[u] = a[tl];
+		return;
+	}
+	int tm = (tl + tr)/2;
+	build(2*u, tl, tm);
+	build(2*u+1, tm+1, tr);
+	seg[u] = min(seg[2*u], seg[2*u+1]);
+}
+
+inline void prop(int u, int len, int fa) {
+    // if min gets increased by fa, then segment min also gets increased by fa
+    // in other cases like sum, handle the propagation correctly with len
+	seg[u] += fa;
+	lazy[u] += fa;
+}
+
+inline void push(int u, int tl, int tr) {
+	if(lazy[u] == 0) return; // range add of 0 does nothing
+	int tm = (tl + tr)/2;
+	prop(2*u, tm - tl + 1, lazy[u]);
+	prop(2*u + 1, tr - tm, lazy[u]);
+	lazy[u] = 0;
+}
+
+void upd(int l, int r, int v, int u = 1, int tl = 1, int tr = U) {
+	if(l > tr || r < tl) return;
+	if(l <= tl && tr <= r) {
+		prop(u, tr - tl + 1, v);
+	} else {
+		push(u, tl, tr);
+		int tm = (tl + tr)/2;
+		upd(l, r, v, 2*u, tl, tm);
+		upd(l, r, v, 2*u+1, tm+1, tr);
+		seg[u] = min(seg[2*u], seg[2*u+1]);
+	}
+}
+
+int get(int l, int r, int u = 1, int tl = 1, int tr = U) {
+    if(l > tr || r < tl) return inf; // some neutral element
+    if(l <= tl && tr <= r) return seg[u];
+    
+    push(u, tl, tr);
+    int tm = (tl + tr)/2;
+    int left = get(l, r, 2*u, tl, tm);
+    int right = get(l, r, 2*u+1, tm+1, tr);
+    return min(left, right);
+}
+
+// walk over segment tree to find first lesser than 0
+int walk(int u, int tl, int tr) {
+	if(tl == tr) {
+		if(seg[u] >= 0) return U + 1;
+		return tl;
+	}
+	push(u, tl, tr);
+	int tm = (tl + tr) / 2;
+	if(seg[2*u] < 0) return walk(2*u, tl, tm);
+	return walk(2*u + 1, tm + 1, tr);
+}
