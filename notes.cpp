@@ -1,3 +1,5 @@
+// === UTILS and LIS ===
+
 // fast min/max assignment
 template<class T> bool chmin(T& a, const T& b) {
     return b < a ? a = b, 1 : 0;
@@ -16,6 +18,26 @@ int lis(vi& a){
     }
     return sz(dp);
 }
+
+// fisher yates partial shuffle
+// assumes res is preset to size k
+// popl = population vector
+mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count());
+auto fisher_yates = [&popl](vi& res, int k) -> void {
+    rep(i,0,k){
+        uniform_int_distribution<> dist(i,sz(popl)-1);
+        int j = dist(rng);
+        swap(popl[i], popl[j]);
+    }
+    rep(i,0,k) res[i] = popl[i];
+};
+
+// full shuffle
+mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count());
+vi arr(n);
+shuffle(all(arr), rng);
+
+/// === GRAPH TRAVERSAL ===
 
 //flood fill bfs
 int dx[4] = {1,-1,0,0};
@@ -61,6 +83,43 @@ void floyd(){
     }
     // start of cycle = mu, cycle length = lambda
 }
+
+// topo sort - dfs
+vi order;
+void dfs(int u){
+    vis[u] = true;
+    for(auto v:adj[u]){
+        if(!vis[v]) dfs(v);
+    }
+    order.pb(u);
+}
+void topo_sort(){
+    order.clear(); vis.assign(n, false);
+    rep(i,0,n){
+        if(!vis[i]) dfs(i);
+    }
+    reverse(all(order));
+} // ans contains toposort
+
+// topo sort - bfs (kahn's algo)
+queue<int> q;
+//use priority queue for lexicographically minimum order
+rep(i,0,n){
+    if(indegree[i] == 0) q.push(i);
+}
+vi order;
+while(!q.empty()){
+    int c = q.front(); q.pop();
+    order.pb(c);
+    for(auto v:adj[c]){
+        indegree[v]--;
+        if(!indegree[v]) q.push(v);
+    }
+}
+if(sz(order)!=n) // no valid topo sort
+else{} // order contains topo sort
+
+// === NUMBER THEORY ===
 
 //prime factorization of numbers spf = smallest prime factor
 rep(i,2,U) if(!spf[i]) {
@@ -114,7 +173,7 @@ int ext_gcd(int a,int b,int& x,int& y){
 
 // nCr computation in O(n + log M)
 ll F[U], iF[U];
-F[0] = F[1] = 1
+F[0] = F[1] = 1;
 rep(i,2,U) F[i] = (i*F[i-1])%M;
 
 iF[U-1] = inv(F[U-1]);
@@ -125,6 +184,40 @@ ll C(int n, int r){
     else if(r < 0 || r > n) return 0;
     return (F[n]*iF[r]%M)*iF[n-r]%M;
 }
+
+// nCr mod p
+ll lucas(ll n, ll r) {
+    ll res = 1;
+    while (n) {
+        ll N = n % p;
+        ll R = r % p;
+
+        if (R > N) return 0;
+        ll C = 1;
+        if(R != 0) C = (F[N]*iF[R]%p)*iF[N-R]%p;
+        
+        res = (res * C) % p;
+        n /= p; r /= p;
+    }
+    return res;
+}
+
+
+// Euler Totient Sieve
+vi get_phi(int n){
+    vi phi(n+1);
+    iota(all(phi),0);
+    rep(i,2,n+1){
+        if(phi[i] == i){
+            for(int j = i; j <= n; j += i){
+                phi[j] -= phi[j]/i;
+            }
+        }
+    }
+    return phi;
+}
+
+// === SHORTEST PATHS ===
 
 // 0-1 bfs
 ll d[U];
@@ -145,55 +238,6 @@ while(q.size()){
         }
     }
 }
-
-// union find disjoint set
-struct DSU {
-	vi e;
-    DSU(int N) : e(N,-1) {}
-	int get(int x) { return e[x] < 0 ? x : e[x] = get(e[x]); } 
-	bool same(int a, int b) { return get(a) == get(b); }
-	int size(int x) { return -e[get(x)]; }
-	bool unite(int x, int y) {
-		x = get(x), y = get(y); if (x == y) return 0;
-		if (e[x] > e[y]) swap(x,y);
-		e[x] += e[y]; e[y] = x; return 1;
-	}
-};
-
-// topo sort - dfs
-vi order;
-void dfs(int u){
-    vis[u] = true;
-    for(auto v:adj[u]){
-        if(!vis[v]) dfs(v);
-    }
-    order.pb(u);
-}
-void topo_sort(){
-    order.clear(); vis = {};
-    rep(i,0,n){
-        if(!vis[i]) dfs(i);
-    }
-    reverse(all(order));
-} // ans contains toposort
-
-// topo sort - bfs (kahn's algo)
-queue<int> q;
-//use priority queue for lexicographically minimum order
-rep(i,0,n){
-    if(indegree[i] == 0) q.push(i);
-}
-vi order;
-while(!q.empty()){
-    int c = q.front(); q.pop();
-    order.pb(c);
-    for(auto v:adj[c]){
-        indegree[v]--;
-        if(!indegree[v]) q.push(v);
-    }
-}
-if(sz(order)!=n) // no valid topo sort
-else{} // order contains topo sort
 
 // dijkstra
 vll dist(U,LLONG_MAX);
@@ -233,6 +277,22 @@ rep(k,1,n+1){
     }
 }
 
+// === DSU & MST ===
+
+// union find disjoint set
+struct DSU {
+	vi e;
+    DSU(int N) : e(N,-1) {}
+	int get(int x) { return e[x] < 0 ? x : e[x] = get(e[x]); } 
+	bool same(int a, int b) { return get(a) == get(b); }
+	int size(int x) { return -e[get(x)]; }
+	bool unite(int x, int y) {
+		x = get(x), y = get(y); if (x == y) return 0;
+		if (e[x] > e[y]) swap(x,y);
+		e[x] += e[y]; e[y] = x; return 1;
+	}
+};
+
 // kruskal mst
 struct Edge {
     int u,v,w;
@@ -246,7 +306,7 @@ ll cost = 0;
 vt<Edge> mst;
 
 for(auto e: edges){
-    if(ds.unite(e.u e.v)) {
+    if(ds.unite(e.u, e.v)) {
         cost += e.w;
         mst.pb(e);
         if(sz(mst) == n-1) break;
@@ -254,16 +314,16 @@ for(auto e: edges){
 }
 
 // prims mst for dense graphs O(V^2)
-adj[U][U];
+int adj[U][U];
 bool vis[U];
 vt<pi> min_e(U,{M,-1});
 ll cost = 0;
 min_e[0].fr = 0; // 0 chosen to be root of mst;
 rep(i,0,n){
     int v = -1;
-    rep(j,0,n)[
+    rep(j,0,n) {
         if(!vis[j] && (v == -1 || min_e[j].fr < min_e[v].fr)) v = j;
-    ]
+    }
     if(v ==-1 || min_e[v].fr == M){
         cost = -1; break; // no mst possible;
     }
@@ -279,6 +339,8 @@ rep(i,0,n){
 // first iteration adds root node for cost 0, rest all start adding edges of tree
 // output -> cost
 // same idea used for djikstra with dense
+
+// === RANGE QUERIES ===
 
 // fenwick tree (point update range sum) {one indexed}
 // i & (-i) gives us least significant bit
@@ -372,6 +434,79 @@ struct chash {
 	}
 };
 
+// sparse table O(nlogn) construction
+// O(1) query for idempotent (min,max)
+// stores value of function over [i, i + 2^j) for j <= LOG_U;
+// check cses/staticmin
+
+// lazy seg (range add, range min)
+// check cses/rangeupdateandsum for more complex node propagation
+int seg[4*n], lazy[4*n];
+
+void build(vi& a, int u = 1, int tl = 1, int tr = n) {
+	if(tl == tr) {
+		seg[u] = a[tl];
+		return;
+	}
+	int tm = (tl + tr)/2;
+	build(2*u, tl, tm);
+	build(2*u+1, tm+1, tr);
+	seg[u] = min(seg[2*u], seg[2*u+1]);
+}
+
+inline void prop(int u, int len, int fa) {
+    // if min gets increased by fa, then segment min also gets increased by fa
+    // in other cases like sum, handle the propagation correctly with len
+	seg[u] += fa;
+	lazy[u] += fa;
+}
+
+inline void push(int u, int tl, int tr) {
+	if(lazy[u] == 0) return; // range add of 0 does nothing
+	int tm = (tl + tr)/2;
+	prop(2*u, tm - tl + 1, lazy[u]);
+	prop(2*u + 1, tr - tm, lazy[u]);
+	lazy[u] = 0;
+}
+
+void upd(int l, int r, int v, int u = 1, int tl = 1, int tr = U) {
+	if(l > tr || r < tl) return;
+	if(l <= tl && tr <= r) {
+		prop(u, tr - tl + 1, v);
+	} else {
+		push(u, tl, tr);
+		int tm = (tl + tr)/2;
+		upd(l, r, v, 2*u, tl, tm);
+		upd(l, r, v, 2*u+1, tm+1, tr);
+		seg[u] = min(seg[2*u], seg[2*u+1]);
+	}
+}
+
+int get(int l, int r, int u = 1, int tl = 1, int tr = U) {
+    if(l > tr || r < tl) return inf; // some neutral element
+    if(l <= tl && tr <= r) return seg[u];
+    
+    push(u, tl, tr);
+    int tm = (tl + tr)/2;
+    int left = get(l, r, 2*u, tl, tm);
+    int right = get(l, r, 2*u+1, tm+1, tr);
+    return min(left, right);
+}
+
+// walk over segment tree to find first lesser than 0
+int walk(int u, int tl, int tr) {
+	if(tl == tr) {
+		if(seg[u] >= 0) return U + 1;
+		return tl;
+	}
+	push(u, tl, tr);
+	int tm = (tl + tr) / 2;
+	if(seg[2*u] < 0) return walk(2*u, tl, tm);
+	return walk(2*u + 1, tm + 1, tr);
+}
+
+// === CONNECTED COMPS ===
+
 // Finding Bridges
 int t = 0; 
 vt<pi> bridges;
@@ -449,56 +584,101 @@ int find_art_point(){
     return sz(art_points);
 }
 
+// Finding 2 edge CCs
+// 2CC -> removing any edge from the components keeps it connected
+// equivalent to removing all bridges from the graph and checking connected components
+vi tin(n+1), low(n+1), comp(n+1);
+vvi two_cc;
+int timer = 0;
+stack<int> st;
+auto dfs = [&](auto&& dfs, int u, int p) -> void {
+    tin[u] = low[u] = ++timer;
+    st.push(u);
+    bool multiple_edges = false;
+
+    trav(v, adj[u]) {
+        if (v == p && !multiple_edges) {
+			multiple_edges = true;
+			continue;
+		} // multiple edges only for a multigraph otherwise we can remove this section
+        if(!tin[v]) {
+            dfs(dfs,v,u);
+            low[u] = min(low[u], low[v]);
+        } else {
+            low[u] = min(low[u], tin[v]);
+        }
+    }
+    
+    if(tin[u] == low[u]) {
+        two_cc.emplace_back();
+        while(st.top() != u) {
+            two_cc.back().pb(st.top());
+            comp[st.top()] = sz(two_cc);
+            st.pop();
+        }
+        two_cc.back().pb(st.top());
+        comp[st.top()] = sz(two_cc);
+        st.pop();
+    }
+};
+
+rep(i,1,n+1) {
+    if(!comp[i]) {
+        dfs(dfs, i, i);
+    }
+}
+
+// SCC + condensation graph (Kosaraju)
+vt<bool> vis(n+1, false);
+auto dfs = [&](auto&& dfs, int u, vvi& adj, vi& out) -> void {
+    vis[u] = true;
+    trav(v, adj[u]) if(!vis[v]) {
+        dfs(dfs,v,adj,out);
+    }
+    out.pb(u);
+};
+
+vvi comps, gscc;
+auto scc = [&]() -> void {
+    vi order;
+    rep(i,1,n+1) if(!vis[i]) dfs(dfs,i,g,order);
+
+    vis.assign(n+1,false);
+    reverse(all(order));
+    vi roots(n+1,0);
+    comps.pb({});
+
+    trav(v,order) {
+        if(vis[v]) continue;
+        vi cc;
+        dfs(dfs,v,gt,cc);
+        trav(x,cc) {
+            roots[x] = sz(comps);
+        }
+        comps.pb(cc);
+    }
+
+    gscc.assign(sz(comps), {});
+    rep(i,1,n+1) {
+        int ru = roots[i];
+        trav(v, g[i]) {
+            int rv = roots[v];
+            if(ru != rv) gscc[ru].pb(rv);
+        }
+    }
+    // optional: remove duplicate connections
+    rep(i,1,sz(comps))
+        sort(all(gscc[i])), gscc[i].erase(unique(all(gscc[i])), gscc[i].end());
+}; // kosaraju outputs SCCs in topologically sorted order
+
+// check 2SAT in cses/giantpizza
+
+// === TREES ===
+
 // Euler Tour
 // Subtree Queries - check cses/stquery
 // LCA - check cses/companyqueries2
 // Path Queries - check cses/pathquery
-
-// Euler Totient Sieve
-vi get_phi(int n){
-    vi phi(n+1);
-    iota(all(phi),0);
-    rep(i,2,n+1){
-        if(phi[i] == i){
-            for(int j = i; j <= n; j += i){
-                phi[j] -= phi[j]/i;
-            }
-        }
-    }
-    return phi;
-}
-
-// rolling hash for strings
-class hstring {
-  private:
-    // mersenne prime (use 1e9 + 7 for smaller hash)
-	static const ll M = (1LL << 61) - 1;
-	static const ll B;
-	static vll pow;
-    // p_hash[i] is the hash of the first i characters of the given string
-	vll p_hash;
-	__int128 mul(ll a, ll b) { return (__int128)a * b; }
-	ll mod_mul(ll a, ll b) { return mul(a, b) % M; }
-  public:
-	hstring(const string& s) : p_hash(s.size() + 1) {
-		while (pow.size() <= s.size()) { pow.push_back(mod_mul(pow.back(), B)); }
-		p_hash[0] = 0;
-		rep(i,0,sz(s)) p_hash[i + 1] = (mul(p_hash[i], B) + s[i]) % M;
-	}
-	ll get_hash(int l, int r) {
-		int w = (r - l + 1);
-        ll val = p_hash[r+1] - mod_mul(p_hash[l],pow[w]);
-        return (val + M) % M;
-	}
-};
-mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count());
-vll hstring::pow = {1};
-const ll hstring::B = uniform_int_distribution<ll>(1, M - 1)(rng);
-
-// sparse table O(nlogn) construction
-// O(1) query for idempotent (min,max)
-// stores value of function over [i, i + 2^j) for j <= LOG_U;
-// check cses/staticmin
 
 // centroid decomposition
 // example storing distance to each ancestor in centroid tree
@@ -552,7 +732,7 @@ rep(i,1,L+1){
 }
 // jumping up k ancestors
 auto jmp = [&](int x, int k) -> int {
-    if(k > dep[x]) return -1;
+    if(k > d[x]) return -1;
     rrep(i,L,-1){
         if(k&(1<<i)){
             x = up[x][i];
@@ -573,6 +753,35 @@ auto lca = [&](int a,int b) -> int {
     }
     return up[a][0];
 };
+
+// === STRINGS ===
+
+// rolling hash for strings
+class hstring {
+  private:
+    // mersenne prime (use 1e9 + 7 for smaller hash)
+	static const ll M = (1LL << 61) - 1;
+	static const ll B;
+	static vll pow;
+    // p_hash[i] is the hash of the first i characters of the given string
+	vll p_hash;
+	__int128 mul(ll a, ll b) { return (__int128)a * b; }
+	ll mod_mul(ll a, ll b) { return mul(a, b) % M; }
+  public:
+	hstring(const string& s) : p_hash(s.size() + 1) {
+		while (pow.size() <= s.size()) { pow.push_back(mod_mul(pow.back(), B)); }
+		p_hash[0] = 0;
+		rep(i,0,sz(s)) p_hash[i + 1] = (mul(p_hash[i], B) + s[i]) % M;
+	}
+	ll get_hash(int l, int r) {
+		int w = (r - l + 1);
+        ll val = p_hash[r+1] - mod_mul(p_hash[l],pow[w]);
+        return (val + M) % M;
+	}
+};
+mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count());
+vll hstring::pow = {1};
+const ll hstring::B = uniform_int_distribution<ll>(1, M - 1)(rng);
 
 // trie
 const int ALPH; // size of alphabet
@@ -603,10 +812,10 @@ int find(vt<node>& trie, string word) {
     rep(i,0,sz(word)) {
         int x = word[i] - 'a'; // whatever to get it in range [0,ALPH]
         if(!trie[cur].down[x]) {
-            return -1
+            return -1;
         } else cur = trie[cur].down[x];
     }
-    if(cur.stop) return cur;
+    if(trie[cur].stop) return cur;
     return -1;
 }
 
@@ -676,177 +885,4 @@ void del(vt<node>& trie, int x){
         c = nx;
     }
     trie[c].cnt--;
-}
-
-// Finding 2 edge CCs
-// 2CC -> removing any edge from the components keeps it connected
-// equivalent to removing all bridges from the graph and checking connected components
-vi tin(n+1), low(n+1), comp(n+1);
-vvi two_cc;
-int timer = 0;
-stack<int> st;
-auto dfs = [&](auto&& dfs, int u, int p) -> void {
-    tin[u] = low[u] = ++timer;
-    st.push(u);
-    bool multiple_edges = false;
-
-    trav(v, adj[u]) {
-        if (v == p && !multiple_edges) {
-			multiple_edges = true;
-			continue;
-		} // multiple edges only for a multigraph otherwise we can remove this section
-        if(!tin[v]) {
-            dfs(dfs,v,u);
-            low[u] = min(low[u], low[v]);
-        } else {
-            low[u] = min(low[u], tin[v]);
-        }
-    }
-    
-    if(tin[u] == low[u]) {
-        two_cc.emplace_back();
-        while(st.top() != u) {
-            two_cc.back().pb(st.top());
-            comp[st.top()] = sz(two_cc);
-            st.pop();
-        }
-        two_cc.back().pb(st.top());
-        comp[st.top()] = sz(two_cc);
-        st.pop();
-    }
-};
-
-rep(i,1,n+1) {
-    if(!comp[i]) {
-        dfs(dfs, i, i);
-    }
-}
-
-// fisher yates partial shuffle
-// assumes res is preset to size k
-// popl = population vector
-mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count());
-auto fisher_yates = [&popl](vi& res, int k) -> void {
-    rep(i,0,k){
-        uniform_int_distribution<> dist(i,sz(popl)-1);
-        int j = dist(rng);
-        swap(popl[i], popl[j]);
-    }
-    rep(i,0,k) res[i] = popl[i];
-};
-
-// full shuffle
-mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count());
-vi arr(n);
-shuffle(all(arr), rng);
-
-// SCC + condensation graph (Kosaraju)
-vt<bool> vis(n+1, false);
-auto dfs = [&](auto&& dfs, int u, vvi& adj, vi& out) -> void {
-    vis[u] = true;
-    trav(v, adj[u]) if(!vis[v]) {
-        dfs(dfs,v,adj,out);
-    }
-    out.pb(u);
-};
-
-vvi comps, gscc;
-auto scc = [&]() -> void {
-    vi order;
-    rep(i,1,n+1) if(!vis[i]) dfs(dfs,i,g,order);
-
-    vis.assign(n+1,false);
-    reverse(all(order));
-    vi roots(n+1,0);
-    comps.pb({});
-
-    trav(v,order) {
-        if(vis[v]) continue;
-        vi cc;
-        dfs(dfs,v,gt,cc);
-        trav(x,cc) {
-            roots[x] = sz(comps);
-        }
-        comps.pb(cc);
-    }
-
-    gscc.assign(sz(comps), {});
-    rep(i,1,n+1) {
-        int ru = roots[i];
-        trav(v, g[i]) {
-            int rv = roots[v];
-            if(ru != rv) gscc[ru].pb(rv);
-        }
-    }
-    // optional: remove duplicate connections
-    rep(i,1,sz(comps))
-        sort(all(gscc[i])), gscc[i].erase(unique(all(gscc[i])), gscc[i].end());
-}; // kosaraju outputs SCCs in topologically sorted order
-
-// check 2SAT in cses/giantpizza
-
-// lazy seg (range add, range min)
-// check cses/rangeupdateandsum for more complex node propagation
-int seg[4*n], lazy[4*n];
-
-void build(vi& a, int u = 1, int tl = 1, int tr = n) {
-	if(tl == tr) {
-		seg[u] = a[tl];
-		return;
-	}
-	int tm = (tl + tr)/2;
-	build(2*u, tl, tm);
-	build(2*u+1, tm+1, tr);
-	seg[u] = min(seg[2*u], seg[2*u+1]);
-}
-
-inline void prop(int u, int len, int fa) {
-    // if min gets increased by fa, then segment min also gets increased by fa
-    // in other cases like sum, handle the propagation correctly with len
-	seg[u] += fa;
-	lazy[u] += fa;
-}
-
-inline void push(int u, int tl, int tr) {
-	if(lazy[u] == 0) return; // range add of 0 does nothing
-	int tm = (tl + tr)/2;
-	prop(2*u, tm - tl + 1, lazy[u]);
-	prop(2*u + 1, tr - tm, lazy[u]);
-	lazy[u] = 0;
-}
-
-void upd(int l, int r, int v, int u = 1, int tl = 1, int tr = U) {
-	if(l > tr || r < tl) return;
-	if(l <= tl && tr <= r) {
-		prop(u, tr - tl + 1, v);
-	} else {
-		push(u, tl, tr);
-		int tm = (tl + tr)/2;
-		upd(l, r, v, 2*u, tl, tm);
-		upd(l, r, v, 2*u+1, tm+1, tr);
-		seg[u] = min(seg[2*u], seg[2*u+1]);
-	}
-}
-
-int get(int l, int r, int u = 1, int tl = 1, int tr = U) {
-    if(l > tr || r < tl) return inf; // some neutral element
-    if(l <= tl && tr <= r) return seg[u];
-    
-    push(u, tl, tr);
-    int tm = (tl + tr)/2;
-    int left = get(l, r, 2*u, tl, tm);
-    int right = get(l, r, 2*u+1, tm+1, tr);
-    return min(left, right);
-}
-
-// walk over segment tree to find first lesser than 0
-int walk(int u, int tl, int tr) {
-	if(tl == tr) {
-		if(seg[u] >= 0) return U + 1;
-		return tl;
-	}
-	push(u, tl, tr);
-	int tm = (tl + tr) / 2;
-	if(seg[2*u] < 0) return walk(2*u, tl, tm);
-	return walk(2*u + 1, tm + 1, tr);
 }
