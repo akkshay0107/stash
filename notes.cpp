@@ -51,6 +51,7 @@ while(!bfs.empty()){
         int yy = c.se + dy[k];
         if(IN(xx,-1,n) && IN(yy,-1,m) && !vis[xx][yy]){
             bfs.push({xx, yy});
+            vis[xx][yy] = true;
         }
     }
 }
@@ -672,6 +673,29 @@ auto scc = [&]() -> void {
 }; // kosaraju outputs SCCs in topologically sorted order
 
 // check 2SAT in cses/giantpizza
+
+// eulerian cycles
+vi nodes, edges;
+auto dfs = [&](auto&& dfs, int u) -> void {
+    while(!adj[u].empty()) {
+        auto [to, id] = adj[u].back();
+        adj[u].pop_back();
+        if(vis[id]) continue;
+        vis[id] = 1;
+        
+        dfs(dfs, to);
+        edges.pb(id);
+    }
+    nodes.pb(u);
+};
+
+rep(i,1,n+1) {
+    nodes.clear(); edges.clear();
+    dfs(dfs,i);
+    reverse(all(nodes)); reverse(all(edges));
+    // node stores order of nodes visited in eulerian cycle
+    // edges store order of edges visited in eulerian cycle
+}
 
 // === TREES ===
 
