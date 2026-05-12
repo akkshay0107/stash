@@ -141,9 +141,6 @@ main() {
             usage
             ;;
     esac
-    
-    # Open in code and cd into created dir
-    code "${START_DIR}/${problem_code}/${problem_code}.cpp" && cd "${START_DIR}/${problem_code}"
 }
 
 main "$@"
