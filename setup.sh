@@ -141,6 +141,17 @@ main() {
             usage
             ;;
     esac
+
+    # open in sublime text
+    local cpp_file="${START_DIR}/${problem_code}/${problem_code}.cpp"
+    
+    if command -v subl >/dev/null 2>&1; then
+        subl "$cpp_file"
+    else
+        echo "Warning: Sublime Text (subl) not found in PATH."
+    fi
+    
+    cd "${START_DIR}/${problem_code}"
 }
 
 main "$@"
