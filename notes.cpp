@@ -619,21 +619,27 @@ struct DSU {
 };
 
 struct TwoCC {
-    int n;
-    vi depth, par;
-    vt<char> vis;
-    vt<pi> back_edges;
-    DSU dsu;
+    int n, num_comps;
+    vi comp_id, par;
+    vvi tree;
 
-    TwoCC(const vvi& g) : n(sz(g) - 1), depth(n + 1, 0), par(n + 1, 0), 
-                          vis(n + 1, 0), dsu(n + 1, depth) {
-        // build dfs tree
+    TwoCC(const vvi& g) : n(sz(g) - 1), num_comps(0), comp_id(n + 1, -1), par(n + 1, 0) {
+        vi depth(n + 1, 0);
+        vt<char> vis(n + 1, 0);
+        vt<pi> back_edges;
+        DSU dsu(n + 1, depth); 
+
         auto dfs = [&](this auto& self, int u, int p, int d) -> void {
             vis[u] = 1;
             depth[u] = d;
             par[u] = p;
             
-            trav(v, g[u]) if (v != p) {
+            bool skipped_parent = false;
+            trav(v, g[u]) {
+                if (v == p && !skipped_parent) {
+                    skipped_parent = true; 
+                    continue;
+                }
                 if (!vis[v]) {
                     self(v, u, d + 1);
                 } else if (depth[v] < depth[u]) {
@@ -642,27 +648,40 @@ struct TwoCC {
             }
         };
 
-        rep(i, 1, n + 1) {
-            if (!vis[i]) dfs(i, 0, 1);
-        }
+        rep(i, 1, n + 1) if (!vis[i]) dfs(i, 0, 1);
 
         trav(edge, back_edges) {
             int u = dsu.highest(edge.fr);
             int v = dsu.highest(edge.se);
-            // climb up tree with highest links
-            // till u and v meet at LCA
             while (u != v) {
                 if (depth[u] < depth[v]) swap(u, v);
-                // move deeper node upward
-                // merge with parent and move up the chain
-                int p = dsu.highest(par[u]);
-                dsu.unite(u, p);
+                int p_node = dsu.highest(par[u]);
+                dsu.unite(u, p_node);
                 u = dsu.highest(u);
             }
         }
+
+        // map sparse dsu roots to comp ids
+        rep(i, 1, n + 1) {
+            int r = dsu.get(i);
+            if (comp_id[r] == -1) comp_id[r] = ++num_comps;
+            comp_id[i] = comp_id[r];
+        }
     }
 
-    int comp_id(int u) { return dsu.get(u); }
+    void build_tree() {
+        tree.assign(num_comps + 1, {});
+        rep(i, 1, n + 1) {
+            if (par[i] == 0) continue; 
+            int u = comp_id[i];
+            int v = comp_id[par[i]];
+            
+            if (u != v) {
+                tree[u].pb(v); 
+                tree[v].pb(u);
+            }
+        }
+    }
 };
 
 // SCC + condensation graph (Kosaraju)
@@ -707,7 +726,6 @@ struct SCC {
             }
         }
 
-        // condensation DAG
         dag.assign(sz(comps), {});
         rep(u, 1, n + 1) {
             int ru = comp_id[u];
