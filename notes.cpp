@@ -588,88 +588,141 @@ int find_art_point(){
 // Finding 2 edge CCs
 // 2CC -> removing any edge from the components keeps it connected
 // equivalent to removing all bridges from the graph and checking connected components
-vi tin(n+1), low(n+1), comp(n+1);
-vvi two_cc;
-int timer = 0;
-stack<int> st;
-auto dfs = [&](auto&& dfs, int u, int p) -> void {
-    tin[u] = low[u] = ++timer;
-    st.push(u);
-    bool multiple_edges = false;
 
-    trav(v, adj[u]) {
-        if (v == p && !multiple_edges) {
-			multiple_edges = true;
-			continue;
-		} // multiple edges only for a multigraph otherwise we can remove this section
-        if(!tin[v]) {
-            dfs(dfs,v,u);
-            low[u] = min(low[u], low[v]);
-        } else {
-            low[u] = min(low[u], tin[v]);
-        }
+struct DSU {
+    vi e, h;
+    const vi& depth;
+
+    DSU(int N, const vi& d) : e(N, -1), h(N), depth(d) {
+        iota(all(h), 0); // every node is the highest in its own comp
     }
     
-    if(tin[u] == low[u]) {
-        two_cc.emplace_back();
-        while(st.top() != u) {
-            two_cc.back().pb(st.top());
-            comp[st.top()] = sz(two_cc);
-            st.pop();
-        }
-        two_cc.back().pb(st.top());
-        comp[st.top()] = sz(two_cc);
-        st.pop();
+    int get(int x) { return e[x] < 0 ? x : e[x] = get(e[x]); } 
+    bool same(int a, int b) { return get(a) == get(b); }
+    int size(int x) { return -e[get(x)]; }
+    int highest(int x) { return h[get(x)]; }
+    
+    bool unite(int x, int y) {
+        x = get(x), y = get(y); 
+        if (x == y) return 0;
+        
+        // store highest node amongst both sets
+        int minh = (depth[h[x]] < depth[h[y]]) ? h[x] : h[y];
+
+        if (e[x] > e[y]) swap(x, y);
+        e[x] += e[y]; 
+        e[y] = x; 
+
+        h[x] = minh; // assign highest back to merged set
+        return 1;
     }
 };
 
-rep(i,1,n+1) {
-    if(!comp[i]) {
-        dfs(dfs, i, i);
+struct TwoCC {
+    int n;
+    vi depth, par;
+    vt<char> vis;
+    vt<pi> back_edges;
+    DSU dsu;
+
+    TwoCC(const vvi& g) : n(sz(g) - 1), depth(n + 1, 0), par(n + 1, 0), 
+                          vis(n + 1, 0), dsu(n + 1, depth) {
+        // build dfs tree
+        auto dfs = [&](this auto& self, int u, int p, int d) -> void {
+            vis[u] = 1;
+            depth[u] = d;
+            par[u] = p;
+            
+            trav(v, g[u]) if (v != p) {
+                if (!vis[v]) {
+                    self(v, u, d + 1);
+                } else if (depth[v] < depth[u]) {
+                    back_edges.pb({u, v}); 
+                }
+            }
+        };
+
+        rep(i, 1, n + 1) {
+            if (!vis[i]) dfs(i, 0, 1);
+        }
+
+        trav(edge, back_edges) {
+            int u = dsu.highest(edge.fr);
+            int v = dsu.highest(edge.se);
+            // climb up tree with highest links
+            // till u and v meet at LCA
+            while (u != v) {
+                if (depth[u] < depth[v]) swap(u, v);
+                // move deeper node upward
+                // merge with parent and move up the chain
+                int p = dsu.highest(par[u]);
+                dsu.unite(u, p);
+                u = dsu.highest(u);
+            }
+        }
     }
-}
+
+    int comp_id(int u) { return dsu.get(u); }
+};
 
 // SCC + condensation graph (Kosaraju)
-vt<bool> vis(n+1, false);
-auto dfs = [&](auto&& dfs, int u, vvi& adj, vi& out) -> void {
-    vis[u] = true;
-    trav(v, adj[u]) if(!vis[v]) {
-        dfs(dfs,v,adj,out);
-    }
-    out.pb(u);
-};
+struct SCC {
+    int n;
+    vi comp_id; // comp_id[u] = ID of the SCC containing u
+    vvi comps;  // comps[i] = list of nodes in SCC i
+    vvi dag;    // Condensed graph of SCCs
 
-vvi comps, gscc;
-auto scc = [&]() -> void {
-    vi order;
-    rep(i,1,n+1) if(!vis[i]) dfs(dfs,i,g,order);
-
-    vis.assign(n+1,false);
-    reverse(all(order));
-    vi roots(n+1,0);
-    comps.pb({});
-
-    trav(v,order) {
-        if(vis[v]) continue;
-        vi cc;
-        dfs(dfs,v,gt,cc);
-        trav(x,cc) {
-            roots[x] = sz(comps);
+    SCC(const vvi& g) : n(sz(g) - 1), comp_id(n + 1, 0) {
+        vvi gt(n + 1);
+        rep(u, 1, n + 1) {
+            trav(v, g[u]) gt[v].pb(u);
         }
-        comps.pb(cc);
-    }
 
-    gscc.assign(sz(comps), {});
-    rep(i,1,n+1) {
-        int ru = roots[i];
-        trav(v, g[i]) {
-            int rv = roots[v];
-            if(ru != rv) gscc[ru].pb(rv);
+        vt<char> vis(n + 1, 0);
+        vi order; order.reserve(n);
+
+        // order contains nodes in increasing order of exit time
+        auto dfs1 = [&](this auto& self, int u) -> void {
+            vis[u] = 1;
+            trav(v, g[u]) if (!vis[v]) self(v);
+            order.pb(u);
+        };
+
+        rep(i, 1, n + 1) if (!vis[i]) dfs1(i);
+
+        vis.assign(n + 1, 0);
+        comps.pb({}); // 0 slot unused
+
+        auto dfs2 = [&](this auto& self, int u) -> void {
+            vis[u] = 1;
+            comp_id[u] = sz(comps) - 1;
+            comps.back().pb(u);
+            trav(v, gt[u]) if (!vis[v]) self(v);
+        };
+
+        trav(v, views::reverse(order)) {
+            if (!vis[v]) {
+                comps.pb({});
+                dfs2(v);
+            }
+        }
+
+        // condensation DAG
+        dag.assign(sz(comps), {});
+        rep(u, 1, n + 1) {
+            int ru = comp_id[u];
+            trav(v, g[u]) {
+                int rv = comp_id[v];
+                if (ru != rv) dag[ru].pb(rv);
+            }
+        }
+
+        rep(i, 1, sz(comps)) {
+            sort(all(dag[i]));
+            auto [first, last] = ranges::unique(dag[i]);
+            dag[i].erase(first, last);
         }
     }
-    // optional: remove duplicate connections
-    rep(i,1,sz(comps))
-        sort(all(gscc[i])), gscc[i].erase(unique(all(gscc[i])), gscc[i].end());
 }; // kosaraju outputs SCCs in topologically sorted order
 
 // check 2SAT in cses/giantpizza
