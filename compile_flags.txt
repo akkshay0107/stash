@@ -1,4 +1,0 @@
--xc++
--std=c++17
--Wall
--D_GLIBCXX_DEBUG

@@ -2,6 +2,8 @@
 # write the random generator for test cases in gen.cpp and compile it to gen
 # compile working / brute force solution to working
 # code to be tested compiled to a
+# source: errichto yt
+
 UPPER_BOUND=100000
 
 for((i = 1; i <= $UPPER_BOUND; ++i)); do

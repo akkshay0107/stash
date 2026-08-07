@@ -1,0 +1,40 @@
+[
+    { 
+        "keys": ["ctrl+`"], 
+        "command": "toggle_terminus_panel",
+        "args": {
+            "config_name": "Default",
+            "cwd": "${file_path:${folder}}"
+        }
+    },
+        {
+        "keys": ["ctrl+alt+b"],
+        "command": "terminus_open",
+        "args": {
+            "cmd": ["bash", "-c", "g++ '${file}' -std=c++23 -O2 -o a && ./a; exec bash"],
+            "cwd": "$file_path",
+            "panel_name": "Terminus",
+            "focus": true,
+        }
+    },
+    {
+        "keys": ["ctrl+alt+d"],
+        "command": "terminus_open",
+        "args": {
+            "cmd": ["bash", "-c", "g++ '${file}' -std=c++23 -Wall -o a -fsanitize=address,undefined -g -D_GLIBCXX_DEBUG && ./a; exec bash"],
+            "cwd": "$file_path",
+            "panel_name": "Terminus",
+            "focus": true,
+        }
+    },
+    {
+        "keys": ["shift+insert"],
+        "command": "terminus_paste",
+        "context": [{ "key": "terminus_view" }]
+    },
+    {
+        "keys": ["ctrl+shift+insert"],
+        "command": "terminus_paste",
+        "context": [{ "key": "terminus_view" }]
+    }
+]

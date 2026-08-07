@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # loc.txt format
 # [src_path1] [dest_path1]
 # [src_path2] [dest_path2]
@@ -9,12 +10,12 @@ if [ ! -f "$LOC_PATH" ]; then
     echo "Error: File not found: $LOC_PATH"
     exit 1
 fi
-
 while IFS= read -r line; do
     if [[ -z "$line" || "$line" =~ ^# ]]; then
         continue
     fi
-    read -r -a paths <<< "$line"
+
+    eval "paths=($line)"
     SRC_PATH="${paths[0]}"
     DEST_PATH="${paths[1]}" # path relative to repo root
 
@@ -27,13 +28,11 @@ while IFS= read -r line; do
         echo "Error: File not found: $SRC_PATH"
         continue
     fi
-
     DEST_DIR="$(dirname "$DEST_PATH")"
     if [ ! -d "$DEST_DIR" ]; then
         echo "Creating directory: $DEST_DIR"
         mkdir -p "$DEST_DIR"
     fi
-
     cp "$SRC_PATH" "$DEST_PATH"
     if [ $? -ne 0 ]; then
         echo "Error: Copy failed: $SRC_PATH"
