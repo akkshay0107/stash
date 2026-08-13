@@ -1,0 +1,7 @@
+CompileFlags:
+  Add: 
+    - "-std=c++23"
+    - "-Wall"
+    - "-g"
+    - "-D_GLIBCXX_DEBUG"
+    - "-fsanitize=address,undefined"
