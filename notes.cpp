@@ -629,7 +629,7 @@ struct TwoCC {
         vt<pi> back_edges;
         DSU dsu(n + 1, depth); 
 
-        auto dfs = [&](this auto& self, int u, int p, int d) -> void {
+        auto dfs = [&](auto&& self, int u, int p, int d) -> void {
             vis[u] = 1;
             depth[u] = d;
             par[u] = p;
@@ -641,14 +641,14 @@ struct TwoCC {
                     continue;
                 }
                 if (!vis[v]) {
-                    self(v, u, d + 1);
+                    self(self, v, u, d + 1);
                 } else if (depth[v] < depth[u]) {
                     back_edges.pb({u, v}); 
                 }
             }
         };
 
-        rep(i, 1, n + 1) if (!vis[i]) dfs(i, 0, 1);
+        rep(i, 1, n + 1) if (!vis[i]) dfs(dfs, i, 0, 1);
 
         trav(edge, back_edges) {
             int u = dsu.highest(edge.fr);
@@ -701,28 +701,28 @@ struct SCC {
         vi order; order.reserve(n);
 
         // order contains nodes in increasing order of exit time
-        auto dfs1 = [&](this auto& self, int u) -> void {
+        auto dfs1 = [&](auto&& self, int u) -> void {
             vis[u] = 1;
-            trav(v, g[u]) if (!vis[v]) self(v);
+            trav(v, g[u]) if (!vis[v]) self(self, v);
             order.pb(u);
         };
 
-        rep(i, 1, n + 1) if (!vis[i]) dfs1(i);
+        rep(i, 1, n + 1) if (!vis[i]) dfs1(dfs1, i);
 
         vis.assign(n + 1, 0);
         comps.pb({}); // 0 slot unused
 
-        auto dfs2 = [&](this auto& self, int u) -> void {
+        auto dfs2 = [&](auto&& self, int u) -> void {
             vis[u] = 1;
             comp_id[u] = sz(comps) - 1;
             comps.back().pb(u);
-            trav(v, gt[u]) if (!vis[v]) self(v);
+            trav(v, gt[u]) if (!vis[v]) self(self, v);
         };
 
         trav(v, views::reverse(order)) {
             if (!vis[v]) {
                 comps.pb({});
-                dfs2(v);
+                dfs2(dfs2, v);
             }
         }
 
