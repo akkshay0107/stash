@@ -43,6 +43,16 @@ auto fisher_yates = [](vi& popl, vi& res, int k) -> void {
 // - Use std::shuffle with rng; avoid std::random_shuffle (deprecated, predictable).
 // shuffle(all(arr), rng);
 
+// Coordinate Compression
+// - Maps arbitrary coordinates to 0-indexed ranks [0, unique_count - 1].
+// - get_id(x) returns the compressed 0-based index of value x.
+vi vals = a; // copy of values to compress
+sort(all(vals));
+vals.erase(unique(all(vals)), vals.end());
+auto get_id = [&](auto x) {
+    return lower_bound(all(vals), x) - vals.begin();
+};
+
 // === GRAPH TRAVERSAL ===
 
 // Flood Fill BFS (0-indexed grid [0, n-1] x [0, m-1])
@@ -515,8 +525,25 @@ struct chash {
 };
 gp_hash_table<int, int, chash> ht; // -> faster hash map
 
-// Sparse Table: for static idempotent range queries (min, max, gcd)
-// stores value of function over [i, i + 2^j) for j <= LOG_U; check cses/staticmin
+// Sparse Table (Static Range Minimum / Idempotent Queries)
+// - 0-indexed over [0, n - 1]. Query intervals are inclusive [l, r].
+// - Supports any idempotent operation (min, max, gcd, bitwise AND/OR).
+struct SparseTable {
+    int n, K;
+    vvi st;
+    SparseTable(const vi& a) : n(sz(a)), K(__lg(max(1, n)) + 1), st(K, vi(n)) {
+        st[0] = a;
+        rep(i, 1, K) {
+            rep(j, 0, n - (1 << i) + 1) {
+                st[i][j] = min(st[i - 1][j], st[i - 1][j + (1 << (i - 1))]);
+            }
+        }
+    }
+    int query(int l, int r) const {
+        int i = __lg(r - l + 1);
+        return min(st[i][l], st[i][r - (1 << i) + 1]);
+    }
+};
 
 // Lazy Segment Tree (Recursive, Range Update, Range Query)
 // - 1-indexed tree over range [1, n]. Both updates and queries use inclusive intervals [l, r].
@@ -862,10 +889,22 @@ rep(i, 1, n + 1) {
 
 // === TREES ===
 
-// Euler Tour
-// Subtree Queries - check cses/stquery
-// LCA - check cses/companyqueries2
-// Path Queries - check cses/pathquery
+// Euler Tour / Tree Flattening
+// - 1-indexed tree.
+// - Subtree of node u corresponds to contiguous range [tin[u], tout[u]].
+// - Use with Fenwick Tree or Segment Tree for subtree updates and queries.
+vi tin, tout;
+int timer = 0;
+
+void euler_tour(int u, int p, const vvi& adj) {
+    tin[u] = ++timer;
+    trav(v, adj[u]) {
+        if (v != p) euler_tour(v, u, adj);
+    }
+    tout[u] = timer;
+}
+// tin.assign(n + 1, 0); tout.assign(n + 1, 0); timer = 0;
+// euler_tour(root, 0, adj);
 
 // Centroid Decomposition
 // - Undirected tree, 1-indexed.
