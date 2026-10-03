@@ -178,6 +178,42 @@ ll exp(ll a, ll b) {
     return res;
 }
 
+// Matrix Multiplication and Exponentiation
+// - Matrix size is N x N. Computes (a^p) % M.
+// - Useful for linear recurrences and counting paths of length p on graphs.
+struct Matrix {
+    vvl mat;
+    int n;
+    Matrix(int n) : n(n), mat(n, vll(n, 0)) {}
+    static Matrix identity(int n) {
+        Matrix res(n);
+        rep(i, 0, n) res.mat[i][i] = 1;
+        return res;
+    }
+    Matrix operator*(const Matrix& o) const {
+        Matrix res(n);
+        rep(i, 0, n) {
+            rep(k, 0, n) {
+                if (!mat[i][k]) continue;
+                rep(j, 0, n) {
+                    res.mat[i][j] = (res.mat[i][j] + mat[i][k] * o.mat[k][j]) % M;
+                }
+            }
+        }
+        return res;
+    }
+};
+
+Matrix mat_exp(Matrix a, ll p) {
+    Matrix res = Matrix::identity(a.n);
+    while (p) {
+        if (p & 1) res = res * a;
+        a = a * a;
+        p >>= 1;
+    }
+    return res;
+}
+
 // Modular Inverse
 // - Modulo M MUST be prime!
 // - 'i' must not be a multiple of M (i % M != 0).
@@ -186,11 +222,47 @@ ll inv(ll i) {
     return i <= 1 ? i : M - (ll)(M / i) * inv(M % i) % M;
 }
 
+// Combined Möbius (mu) and Euler Totient (totient) Sieve
+// - mu[1] = 1. mu[n] = 0 if n has a squared prime factor; otherwise (-1)^k where k is number of distinct prime factors.
+// - totient[n] is count of 1 <= k <= n with gcd(k, n) = 1.
+// - Both are multiplicative functions precomputed up to U.
+int mu[U], totient[U];
+bool is_pr[U];
+vi primes;
+
+void sieve_mu_phi() {
+    fill(mu, mu + U, 1);
+    iota(totient, totient + U, 0);
+    fill(is_pr, is_pr + U, true);
+    is_pr[0] = is_pr[1] = false;
+    mu[0] = 0;
+
+    rep(i, 2, U) {
+        if (is_pr[i]) {
+            primes.pb(i);
+            for (int j = i; j < U; j += i) {
+                if (j > i) is_pr[j] = false;
+                totient[j] -= totient[j] / i;
+                mu[j] = -mu[j];
+            }
+            ll p2 = (ll)i * i;
+            for (ll j = p2; j < U; j += p2) {
+                mu[j] = 0;
+            }
+        }
+    }
+}
+
 // Euler Totient (Single Value)
 // - Defined for n >= 1. phi(1) = 1.
+// - Divides out 2 first, then checks odd p up to sqrt(n) for 2x faster trial division.
 int phi(int n) {
     int ans = n;
-    for (int p = 2; (ll)p * p <= n; ++p) {
+    if (n % 2 == 0) {
+        while (n % 2 == 0) n /= 2;
+        ans -= ans / 2;
+    }
+    for (int p = 3; (ll)p * p <= n; p += 2) {
         if (n % p == 0) {
             while (n % p == 0) n /= p;
             ans -= ans / p;
