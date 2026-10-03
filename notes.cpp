@@ -1216,3 +1216,134 @@ void del(vt<bit_node>& trie, int x) {
     }
     trie[c].cnt--;
 }
+
+// === GEOMETRY ===
+
+// 2D Point with integer coordinates
+struct Point {
+    ll x, y;
+    Point(ll x = 0, ll y = 0) : x(x), y(y) {}
+    Point operator+(const Point& o) const { return Point(x + o.x, y + o.y); }
+    Point operator-(const Point& o) const { return Point(x - o.x, y - o.y); }
+    Point operator*(ll k) const { return Point(x * k, y * k); }
+    bool operator<(const Point& o) const {
+        return x < o.x || (x == o.x && y < o.y);
+    }
+    bool operator==(const Point& o) const {
+        return x == o.x && y == o.y;
+    }
+};
+
+ll cross(Point a, Point b) {
+    return a.x * b.y - a.y * b.x;
+}
+
+// Orientation of triplet (a, b, c):
+// - Returns > 0 for counter-clockwise turn (left turn)
+// - Returns < 0 for clockwise turn (right turn)
+// - Returns 0 if collinear
+ll cross(Point a, Point b, Point c) {
+    return cross(b - a, c - a);
+}
+
+ll dot(Point a, Point b) {
+    return a.x * b.x + a.y * b.y;
+}
+
+// Checks if point p lies on segment ab (inclusive of endpoints)
+bool on_segment(Point p, Point a, Point b) {
+    return cross(a, b, p) == 0 &&
+           min(a.x, b.x) <= p.x && p.x <= max(a.x, b.x) &&
+           min(a.y, b.y) <= p.y && p.y <= max(a.y, b.y);
+}
+
+// Segment-Segment Intersection (Segments ab and cd)
+// - Handles collinear and overlapping segments.
+bool segments_intersect(Point a, Point b, Point c, Point d) {
+    auto sgn = [](ll v) -> int {
+        return (v > 0) - (v < 0);
+    };
+    int d1 = sgn(cross(a, b, c));
+    int d2 = sgn(cross(a, b, d));
+    int d3 = sgn(cross(c, d, a));
+    int d4 = sgn(cross(c, d, b));
+
+    if ((d1 * d2 < 0) && (d3 * d4 < 0)) return true;
+    if (d1 == 0 && on_segment(c, a, b)) return true;
+    if (d2 == 0 && on_segment(d, a, b)) return true;
+    if (d3 == 0 && on_segment(a, c, d)) return true;
+    if (d4 == 0 && on_segment(b, c, d)) return true;
+    return false;
+}
+
+// Polygon 2x Area (Shoelace Formula)
+// - Vertices must be ordered clockwise or counter-clockwise.
+// - Returns 2 * Area (integer) to avoid precision loss.
+// - Lattice points on segment AB: gcd(abs(a.x - b.x), abs(a.y - b.y)).
+// - Pick's Theorem: Area = I + B/2 - 1 => Interior points I = (2*Area - B + 2) / 2.
+ll polygon_area_2x(const vt<Point>& pts) {
+    ll area = 0;
+    int m = sz(pts);
+    rep(i, 0, m) {
+        area += cross(pts[i], pts[(i + 1) % m]);
+    }
+    return abs(area);
+}
+
+// Point in Polygon (PIP) Test
+// - Returns 1 for strictly inside, -1 for on boundary, 0 for outside.
+// - Uses exact integer arithmetic (ray casting).
+int point_in_polygon(const vt<Point>& pts, Point p) {
+    int m = sz(pts);
+    bool inside = false;
+    rep(i, 0, m) {
+        Point a = pts[i], b = pts[(i + 1) % m];
+        if (on_segment(p, a, b)) return -1;
+        if (a.y > b.y) swap(a, b);
+        if (a.y <= p.y && p.y < b.y && cross(a, b, p) > 0) {
+            inside = !inside;
+        }
+    }
+    return inside ? 1 : 0;
+}
+
+// Line-Line Intersection (Lines AB and CD)
+// - Returns {true, {x, y}} if lines intersect at a unique point.
+// - Returns {false, {0, 0}} if lines are parallel or coincident.
+pair<bool, pair<double, double>> line_intersection(Point a, Point b, Point c, Point d) {
+    ll den = cross(b - a, d - c);
+    if (den == 0) return {false, {0, 0}};
+    double t = (double)cross(c - a, d - c) / den;
+    return {true, {a.x + t * (b.x - a.x), a.y + t * (b.y - a.y)}};
+}
+
+// Convex Hull (Andrew's Monotone Chain)
+// - Returns vertices of convex hull in counter-clockwise order.
+// - To keep collinear points on the hull, change <= 0 to < 0.
+// - Input 'pts' is sorted in-place.
+vt<Point> convex_hull(vt<Point>& pts) {
+    int m = sz(pts);
+    if (m <= 2) return pts;
+    sort(all(pts));
+
+    vt<Point> h;
+    // Lower hull
+    rep(i, 0, m) {
+        while (sz(h) >= 2 && cross(h[sz(h) - 2], h.back(), pts[i]) <= 0) {
+            h.pop_back();
+        }
+        h.pb(pts[i]);
+    }
+
+    // Upper hull
+    int lower_sz = sz(h);
+    rrep(i, m - 2, -1) {
+        while (sz(h) > lower_sz && cross(h[sz(h) - 2], h.back(), pts[i]) <= 0) {
+            h.pop_back();
+        }
+        h.pb(pts[i]);
+    }
+
+    h.pop_back(); // Remove duplicate start point
+    return h;
+}
