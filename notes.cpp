@@ -497,34 +497,45 @@ rep(i, 0, n) {
 // - Strictly 1-indexed. add(0, ...) enters an infinite loop!
 // - Point update, range sum query over [l, r].
 struct FenwickTree {
-    vt<ll> bit;
     int n;
+    vt<ll> bit;
 
-    // O(n) construction
-    void init(const vt<ll>& a) {
-        n = sz(a);
-        bit.assign(n, 0);
-        rep(i, 1, n) {
-            bit[i] += a[i];
-            int r = i + (i & (-i));
-            if (r < n) bit[r] += bit[i];
+    FenwickTree() : n(0), bit(1, 0) {}
+    FenwickTree(int n) : n(n), bit(n + 1, 0) {}
+    // O(n) build
+    FenwickTree(const vt<ll>& a) : n(sz(a) - 1), bit(a) {
+        bit[0] = 0;
+        for (int i = 1; i <= n; i++) {
+            int r = i + (i & -i);
+            if (r <= n) bit[r] += bit[i];
         }
     }
 
-    ll sum(int r) {
+    ll sum(int r) const {
         ll ret = 0;
-        for (; r > 0; r -= r & (-r)) ret += bit[r];
+        for (; r > 0; r &= r - 1) ret += bit[r];
         return ret;
     }
 
-    ll sum(int l, int r) {
-        return sum(r) - sum(l - 1);
-    }
+    // Range sum over [l, r]
+    ll sum(int l, int r) const { return sum(r) - sum(l - 1); }
 
     void add(int x, ll delta) {
-        for (; x < n; x += x & (-x)) bit[x] += delta;
+        for (; x <= n; x += x & -x) bit[x] += delta;
     }
-    // check cses/dynrangesum for updates
+
+    // Smallest idx such that sum(idx) >= k (assumes all values >= 0).
+    // Returns n + 1 if the total is < k
+    int lower_bound(ll k) const {
+        int pos = 0;
+        for (int pw = n ? 1 << __lg(n) : 0; pw; pw >>= 1) {
+            if (pos + pw <= n && bit[pos + pw] < k) {
+                pos += pw;
+                k -= bit[pos];
+            }
+        }
+        return pos + 1;
+    }
 };
 
 // Segment Tree (Iterative, Point Update, Range Query)
@@ -1278,7 +1289,7 @@ bool segments_intersect(Point a, Point b, Point c, Point d) {
 
 // Polygon 2x Area (Shoelace Formula)
 // - Vertices must be ordered clockwise or counter-clockwise.
-// - Returns 2 * Area (integer) to avoid precision loss.
+// - Returns 2 * Area (integer)
 // - Lattice points on segment AB: gcd(abs(a.x - b.x), abs(a.y - b.y)).
 // - Pick's Theorem: Area = I + B/2 - 1 => Interior points I = (2*Area - B + 2) / 2.
 ll polygon_area_2x(const vt<Point>& pts) {
@@ -1292,7 +1303,6 @@ ll polygon_area_2x(const vt<Point>& pts) {
 
 // Point in Polygon (PIP) Test
 // - Returns 1 for strictly inside, -1 for on boundary, 0 for outside.
-// - Uses exact integer arithmetic (ray casting).
 int point_in_polygon(const vt<Point>& pts, Point p) {
     int m = sz(pts);
     bool inside = false;
@@ -1317,7 +1327,7 @@ pair<bool, pair<double, double>> line_intersection(Point a, Point b, Point c, Po
     return {true, {a.x + t * (b.x - a.x), a.y + t * (b.y - a.y)}};
 }
 
-// Convex Hull (Andrew's Monotone Chain)
+// Convex Hull
 // - Returns vertices of convex hull in counter-clockwise order.
 // - To keep collinear points on the hull, change <= 0 to < 0.
 // - Input 'pts' is sorted in-place.
