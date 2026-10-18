@@ -1277,118 +1277,245 @@ struct LCA {
 };
 
 
-// === geometry ===
+// === geometry 3d ===
 
-
-// integer points + predicates
-// cross(a, b, c): positive left turn, negative right, zero collinear.
-// use cross/dot for orientation/projection; on_segment includes endpoints.
-// widen arithmetic before subtracting/multiplying if ll can overflow; use ld
-// for lengths and constructed coordinates, keeping integer predicates exact.
-
-struct Point {
-    ll x, y;
-    Point(ll x = 0, ll y = 0) : x(x), y(y) {}
-    Point operator+(const Point& o) const { return Point(x + o.x, y + o.y); }
-    Point operator-(const Point& o) const { return Point(x - o.x, y - o.y); }
-    Point operator*(ll k) const { return Point(x * k, y * k); }
-    bool operator<(const Point& o) const {
-        return x < o.x || (x == o.x && y < o.y);
-    }
-    bool operator==(const Point& o) const {
-        return x == o.x && y == o.y;
-    }
+template<class T>
+struct pt3 {
+    T x{}, y{}, z{};
+    pt3& operator+=(const pt3& p) { x += p.x; y += p.y; z += p.z; return *this; }
+    pt3& operator-=(const pt3& p) { x -= p.x; y -= p.y; z -= p.z; return *this; }
+    pt3& operator*=(T k) { x *= k; y *= k; z *= k; return *this; }
+    pt3& operator/=(T k) { x /= k; y /= k; z /= k; return *this; }
+    pt3 operator+(const pt3& p) const { return {x + p.x, y + p.y, z + p.z}; }
+    pt3 operator-(const pt3& p) const { return {x - p.x, y - p.y, z - p.z}; }
+    pt3 operator-() const { return {-x, -y, -z}; }
+    pt3 operator*(T k) const { return {x * k, y * k, z * k}; }
+    pt3 operator/(T k) const { return {x / k, y / k, z / k}; }
+    friend pt3 operator*(T k, const pt3& p) { return p * k; }
+    bool operator==(const pt3& p) const { return x == p.x && y == p.y && z == p.z; }
 };
 
-ll cross(Point a, Point b) {
-    return a.x * b.y - a.y * b.x;
+template<class T>
+T dot(pt3<T> a, pt3<T> b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-ll cross(Point a, Point b, Point c) {
-    return cross(b - a, c - a);
+template<class T>
+pt3<T> cross(pt3<T> a, pt3<T> b) {
+    return {a.y * b.z - a.z * b.y,
+            a.z * b.x - a.x * b.z,
+            a.x * b.y - a.y * b.x};
 }
 
-ll dot(Point a, Point b) {
+template<class T>
+T triple(pt3<T> a, pt3<T> b, pt3<T> c) {
+    return dot(a, cross(b, c));
+}
+
+template<class T>
+T norm(pt3<T> a) { return dot(a, a); }
+
+template<class T>
+ld abs(pt3<T> a) {
+    ld x = a.x, y = a.y, z = a.z;
+    return sqrtl(x * x + y * y + z * z);
+}
+
+template<class T>
+ld dist(pt3<T> a, pt3<T> b) {
+    return abs(pt3<ld>{(ld)a.x - (ld)b.x, (ld)a.y - (ld)b.y, (ld)a.z - (ld)b.z});
+}
+
+template<class T>
+ld proj(pt3<T> a, pt3<T> b) {
+    pt3<ld> u{(ld)a.x, (ld)a.y, (ld)a.z}, v{(ld)b.x, (ld)b.y, (ld)b.z};
+    return dot(u, v) / abs(v);
+}
+
+template<class T>
+ld angle(pt3<T> a, pt3<T> b) {
+    pt3<ld> u{(ld)a.x, (ld)a.y, (ld)a.z}, v{(ld)b.x, (ld)b.y, (ld)b.z};
+    return acosl(clamp(dot(u, v) / abs(u) / abs(v), -1.0L, 1.0L));
+}
+
+// === geometry 2d ===
+
+template<class T>
+struct pt2 {
+    T x{}, y{};
+    pt2& operator+=(const pt2& p) { x += p.x; y += p.y; return *this; }
+    pt2& operator-=(const pt2& p) { x -= p.x; y -= p.y; return *this; }
+    pt2& operator*=(T k) { x *= k; y *= k; return *this; }
+    pt2& operator/=(T k) { x /= k; y /= k; return *this; }
+    pt2 operator+(const pt2& p) const { return {x + p.x, y + p.y}; }
+    pt2 operator-(const pt2& p) const { return {x - p.x, y - p.y}; }
+    pt2 operator-() const { return {-x, -y}; }
+    pt2 operator*(T k) const { return {x * k, y * k}; }
+    pt2 operator/(T k) const { return {x / k, y / k}; }
+    friend pt2 operator*(T k, const pt2& p) { return p * k; }
+    bool operator==(const pt2& p) const { return x == p.x && y == p.y; }
+    bool operator<(const pt2& p) const { return x < p.x || (x == p.x && y < p.y); }
+};
+
+template<class T>
+T dot(pt2<T> a, pt2<T> b) {
     return a.x * b.x + a.y * b.y;
 }
 
-
-// polygon area / shoelace
-// ordered boundary of a simple polygon; returns twice the area. divide by 2.0L
-// for ld area, or remove abs for signed area/orientation.
-// for lattice polygons, boundary = sum gcd(abs(dx), abs(dy)) over edges;
-// interior = (twice_area - boundary + 2) / 2.
-
-ll polygon_area_2x(const vt<Point>& pts) {
-    ll area = 0;
-    int m = sz(pts);
-    rep(i, 0, m) {
-        area += cross(pts[i], pts[(i + 1) % m]);
-    }
-    return abs(area);
+template<class T>
+T cross(pt2<T> a, pt2<T> b) {
+    return a.x * b.y - a.y * b.x;
 }
 
+template<class T>
+T cross(pt2<T> a, pt2<T> b, pt2<T> c) {
+    return cross(b - a, c - a);
+}
 
-// point in polygon
-// simple polygon, o(n) per query; returns 1 inside, -1 on boundary, 0 outside.
-// use result != 0 to include the boundary, result == 1 to exclude it.
-// needs Point, cross, and on_segment.
+template<class T>
+T norm(pt2<T> a) { return dot(a, a); }
 
-int point_in_polygon(const vt<Point>& pts, Point p) {
-    int m = sz(pts);
+template<class T>
+ld abs(pt2<T> a) {
+    ld x = a.x, y = a.y;
+    return sqrtl(x * x + y * y);
+}
+
+template<class T>
+ld dist(pt2<T> a, pt2<T> b) {
+    return abs(pt2<ld>{(ld)a.x - (ld)b.x, (ld)a.y - (ld)b.y});
+}
+
+template<class T>
+ld proj(pt2<T> a, pt2<T> b) {
+    pt2<ld> u{(ld)a.x, (ld)a.y}, v{(ld)b.x, (ld)b.y};
+    return dot(u, v) / abs(v);
+}
+
+template<class T>
+ld angle(pt2<T> a, pt2<T> b) {
+    pt2<ld> u{(ld)a.x, (ld)a.y}, v{(ld)b.x, (ld)b.y};
+    return acosl(clamp(dot(u, v) / abs(u) / abs(v), -1.0L, 1.0L));
+}
+
+template<class T>
+struct line2 {
+    pt2<T> a, b;
+    bool operator||(const line2& l) const { return cross(b - a, l.b - l.a) == 0; }
+    bool operator==(const line2& l) const { return (*this || l) && cross(a, b, l.a) == 0; }
+};
+
+template<class T>
+bool on_line(pt2<T> p, line2<T> l) {
+    return cross(l.a, l.b, p) == 0;
+}
+
+template<class T>
+bool on_segment(pt2<T> p, line2<T> s) {
+    return cross(s.a, s.b, p) == 0 &&
+           min(s.a.x, s.b.x) <= p.x && p.x <= max(s.a.x, s.b.x) &&
+           min(s.a.y, s.b.y) <= p.y && p.y <= max(s.a.y, s.b.y);
+}
+
+template<class T>
+pt2<ld> line_intersection(line2<T> l, line2<T> m) {
+    pt2<T> u = l.b - l.a, v = m.b - m.a;
+    ld t = (ld)cross(m.a - l.a, v) / (ld)cross(u, v);
+    return {(ld)l.a.x + t * (ld)u.x, (ld)l.a.y + t * (ld)u.y};
+}
+
+template<class T>
+bool segments_intersect(line2<T> s, line2<T> t) {
+    T a = cross(s.a, s.b, t.a), b = cross(s.a, s.b, t.b);
+    T c = cross(t.a, t.b, s.a), d = cross(t.a, t.b, s.b);
+
+    if (a == 0 && on_segment(t.a, s)) return true;
+    if (b == 0 && on_segment(t.b, s)) return true;
+    if (c == 0 && on_segment(s.a, t)) return true;
+    if (d == 0 && on_segment(s.b, t)) return true;
+    
+    return ((a < 0 && b > 0) || (a > 0 && b < 0)) &&
+           ((c < 0 && d > 0) || (c > 0 && d < 0));
+}
+
+template<class T>
+pt2<ld> project(pt2<T> p, line2<T> l) {
+    pt2<ld> a{(ld)l.a.x, (ld)l.a.y}, b{(ld)l.b.x, (ld)l.b.y};
+    pt2<ld> q{(ld)p.x, (ld)p.y}, d = b - a;
+    return a + d * (dot(q - a, d) / norm(d));
+}
+
+template<class T>
+pt2<ld> closest(pt2<T> p, line2<T> s) {
+    pt2<ld> a{(ld)s.a.x, (ld)s.a.y}, b{(ld)s.b.x, (ld)s.b.y};
+    if (s.a == s.b) return a;
+    
+    pt2<ld> q{(ld)p.x, (ld)p.y}, d = b - a;
+    return a + d * clamp(dot(q - a, d) / norm(d), 0.0L, 1.0L);
+}
+
+template<class T>
+ld dist_line(pt2<T> p, line2<T> l) {
+    return dist(pt2<ld>{(ld)p.x, (ld)p.y}, project(p, l));
+}
+
+template<class T>
+ld dist_segment(pt2<T> p, line2<T> s) {
+    return dist(pt2<ld>{(ld)p.x, (ld)p.y}, closest(p, s));
+}
+
+// === polygons + convex hull ===
+
+template<class T>
+T signed_area2(const vt<pt2<T>>& p) {
+    T res = 0;
+    int n = (int)p.size();
+    rep(i, 0, n) res += cross(p[i], p[(i + 1) % n]);
+    return res;
+}
+
+template<class T>
+ld area(const vt<pt2<T>>& p) {
+    return fabsl((ld)signed_area2(p)) / 2.0L;
+}
+
+template<class T>
+ld perimeter(const vt<pt2<T>>& p) {
+    ld res = 0;
+    int n = (int)p.size();
+    rep(i, 0, n) res += dist(p[i], p[(i + 1) % n]);
+    return res;
+}
+
+template<class T>
+int point_in_polygon(const vt<pt2<T>>& p, pt2<T> q) {
     bool inside = false;
-    rep(i, 0, m) {
-        Point a = pts[i], b = pts[(i + 1) % m];
-        if (on_segment(p, a, b)) return -1;
+    int n = (int)p.size();
+    rep(i, 0, n) {
+        pt2<T> a = p[i], b = p[(i + 1) % n];
+        if (on_segment(q, line2<T>{a, b})) return -1;
         if (a.y > b.y) swap(a, b);
-        if (a.y <= p.y && p.y < b.y && cross(a, b, p) > 0) {
-            inside = !inside;
-        }
+        if (a.y <= q.y && q.y < b.y && cross(a, b, q) > 0) inside = !inside;
     }
-    return inside ? 1 : 0;
+    return (int)inside;
 }
 
-
-// line intersection
-// infinite lines through distinct endpoint pairs; returns {found, {x, y}} in ld.
-// false means parallel/coincident. for segments, check segments_intersect first;
-// collinear overlaps need separate handling. cross products must still fit ll.
-
-pair<bool, pair<ld, ld>> line_intersection(Point a, Point b, Point c, Point d) {
-    ll den = cross(b - a, d - c);
-    if (den == 0) return {false, {0, 0}};
-    ld t = (ld)cross(c - a, d - c) / den;
-    return {true, {a.x + t * (b.x - a.x), a.y + t * (b.y - a.y)}};
-}
-
-
-// convex hull / monotone chain
-// counterclockwise extreme vertices, no repeated start; sort/unique input first.
-// change <= 0 to < 0 to keep collinear boundary points, handling all-collinear
-// input separately to avoid duplicates. append the first vertex to close the hull.
-// sorts pts in place when size >= 3; needs Point and cross.
-
-vt<Point> convex_hull(vt<Point>& pts) {
-    int m = sz(pts);
-    if (m <= 2) return pts;
-    sort(all(pts));
-
-    vt<Point> h;
-    rep(i, 0, m) {
-        while (sz(h) >= 2 && cross(h[sz(h) - 2], h.back(), pts[i]) <= 0) {
-            h.pop_back();
-        }
-        h.pb(pts[i]);
+template<class T>
+vt<pt2<T>> convex_hull(vt<pt2<T>> p) {
+    sort(all(p));
+    p.erase(unique(all(p)), p.end());
+    int n = (int)p.size();
+    if (n <= 2) return p;
+    vt<pt2<T>> h;
+    trav(q, p) {
+        while (h.size() >= 2 && cross(h[h.size() - 2], h.back(), q) <= 0) h.pop_back();
+        h.pb(q);
     }
-
-    int lower_sz = sz(h);
-    rrep(i, m - 2, -1) {
-        while (sz(h) > lower_sz && cross(h[sz(h) - 2], h.back(), pts[i]) <= 0) {
-            h.pop_back();
-        }
-        h.pb(pts[i]);
+    int lower = (int)h.size();
+    for (int i = n - 2; i >= 0; --i) {
+        while ((int)h.size() > lower && cross(h[h.size() - 2], h.back(), p[i]) <= 0) h.pop_back();
+        h.pb(p[i]);
     }
-
     h.pop_back();
     return h;
 }
