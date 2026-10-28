@@ -800,44 +800,39 @@ auto euler_tour = [&](auto&& self, int u, int p) -> void {
 euler_tour(euler_tour, 1, 0);
 
 // centroid decomposition
-vt<pi> anc[U];
-int subtree_sz[U];
 bool rem[U];
+ll st[U];
 
-int get_sz(int u, int p) {
-    subtree_sz[u] = 1;
+auto dfs = [&](auto&& self, int u, int p) {
+    st[u] = 1;
     trav(v, adj[u]) {
-        if (v != p && !rem[v]) subtree_sz[u] += get_sz(v, u);
+        if(rem[v] || v == p) continue;
+        dfs(dfs, v, u);
+        st[u] += st[v];
     }
-    return subtree_sz[u];
-}
+};
 
-int get_centroid(int u, int p, int total_n) {
+auto get_centroid = [&](auto&& get_centroid, int u, int p, int tot) -> int {
     trav(v, adj[u]) {
-        if (v == p || rem[v]) continue;
-        if (subtree_sz[v] > total_n / 2) return get_centroid(v, u, total_n);
+        if(rem[v] || v == p) continue;
+        if(st[v] > tot / 2) return get_centroid(get_centroid, v, u, tot);
     }
     return u;
-}
+};
 
-void find_dist(int u, int p, int c, int d) {
-    trav(v, adj[u]) {
-        if (v == p || rem[v]) continue;
-        find_dist(v, u, c, d + 1);
-    }
-    anc[u].pb({c, d});
-}
-
-void build_ct(int u, int p = 0) {
-    int cur_n = get_sz(u, p);
-    int c = get_centroid(u, p, cur_n);
-    find_dist(c, 0, c, 0);
+auto dfs_ct = [&](auto&& dfs_ct, int u, int p) -> int {
+    dfs(u, -1);
+    int c = get_centroid(u, -1, st[u]);
     rem[c] = true;
+    // if(p != -1) { cpar[c] = p; ct[p].pb(c); }
+
     trav(v, adj[c]) {
-        if (rem[v]) continue;
-        build_ct(v, c);
+        if(rem[v]) continue;
+        dfs_ct(dfs_ct, v, c);
     }
+    return c;
 }
+int root = dfs_ct(dfs_ct, 1, -1);
 
 // binary lifting / lca
 int up[U][20], depth[U];
