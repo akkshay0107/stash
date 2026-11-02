@@ -615,11 +615,12 @@ struct node {
     int cnt = 0;
     bool stop = false;
 };
+vt<node> trie = {node()};
 
-void add(vt<node>& trie, const string& word) {
+auto add = [&](auto l, auto r) -> int {
     int cur = 0;
-    rep(i, 0, sz(word)) {
-        int x = word[i] - 'a';
+    for (auto it = l; it != r; ++it) {
+        int x = *it - 'a';
         if (!trie[cur].down[x]) {
             trie[cur].down[x] = sz(trie);
             trie.pb({});
@@ -628,85 +629,34 @@ void add(vt<node>& trie, const string& word) {
         trie[cur].cnt++;
     }
     trie[cur].stop = true;
-}
-
-int find(const vt<node>& trie, const string& word) {
-    int cur = 0;
-    rep(i, 0, sz(word)) {
-        int x = word[i] - 'a';
-        if (!trie[cur].down[x]) {
-            return -1;
-        }
-        cur = trie[cur].down[x];
-    }
-    if (trie[cur].stop) return cur;
-    return -1;
-}
-
-void del(vt<node>& trie, const string& word, int cur = 0, int i = 0) {
-    if (i == sz(word)) {
-        trie[cur].stop = false;
-        return;
-    }
-
-    int x = word[i] - 'a';
-    int nxt = trie[cur].down[x];
-    if (nxt == 0) return;
-
-    del(trie, word, nxt, i + 1);
-    trie[nxt].cnt--;
-    if (trie[nxt].cnt == 0 && !trie[nxt].stop) {
-        trie[cur].down[x] = 0;
-    }
-}
-
-struct bit_node {
-    int down[2] = {};
-    int cnt = 0;
+    return cur;
 };
 
-void add(vt<bit_node>& trie, int x) {
-    int c = 0;
-    rrep(i, 30, -1) {
-        trie[c].cnt++;
-        bool dir = (bool)(x & (1 << i));
-        if (!trie[c].down[dir]) {
-            trie[c].down[dir] = sz(trie);
-            trie.pb({});
-        }
-        c = trie[c].down[dir];
+auto find = [&](auto l, auto r) -> int {
+    int cur = 0;
+    for (auto it = l; it != r; ++it) {
+        int x = *it - 'a';
+        if (!trie[cur].down[x]) return -1;
+        cur = trie[cur].down[x];
     }
-    trie[c].cnt++;
-}
+    return trie[cur].stop ? cur : -1;
+};
 
-int max_xor(const vt<bit_node>& trie, int x) {
-    int c = 0, res = 0;
-    rrep(i, 30, -1) {
-        bool dir = (bool)(x & (1 << i));
-        if (trie[c].down[!dir] && trie[trie[c].down[!dir]].cnt > 0) {
-            res |= (1 << i);
-            c = trie[c].down[!dir];
-        } else {
-            c = trie[c].down[dir];
+auto del = [&](auto l, auto r) -> bool {
+    if (find(l, r) == -1) return false;
+    int cur = 0;
+    for (auto it = l; it != r; ++it) {
+        int x = *it - 'a';
+        int nxt = trie[cur].down[x];
+        if (--trie[nxt].cnt == 0) {
+            trie[cur].down[x] = 0;
+            return true;
         }
+        cur = nxt;
     }
-    return res;
-}
-
-void del(vt<bit_node>& trie, int x) {
-    int c = 0;
-    rrep(i, 30, -1) {
-        trie[c].cnt--;
-        bool dir = (bool)(x & (1 << i));
-        int nx = trie[c].down[dir];
-        if (trie[nx].cnt == 1) {
-            trie[c].down[dir] = 0;
-            return;
-        }
-        c = nx;
-    }
-    trie[c].cnt--;
-}
+    trie[cur].stop = false;
+    return true;
+};
 
 
 // === connectivity ===
