@@ -609,6 +609,7 @@ public:
 vll hstring::pow = {1};
 const ll hstring::B = uniform_int_distribution<ll>(257, (1LL << 61) - 2)(rng);
 
+// --- string trie ---
 const int ALPH = 26;
 struct node {
     int down[ALPH] = {};
@@ -656,6 +657,60 @@ auto del = [&](auto l, auto r) -> bool {
     }
     trie[cur].stop = false;
     return true;
+};
+
+// --- binary trie ---
+// struct node {
+//     int down[2] = {};
+//     int cnt = 0;
+// };
+const int B = 62;
+
+auto add = [&](ll x) -> int {
+    int cur = 0;
+    rrep(b, B - 1, -1) {
+        int bit = (x >> b) & 1;
+        if (!trie[cur].down[bit]) {
+            trie[cur].down[bit] = sz(trie);
+            trie.pb({});
+        }
+        cur = trie[cur].down[bit];
+        trie[cur].cnt++;
+    }
+    return cur;
+};
+
+auto del = [&](ll x) -> bool {
+    int cur = 0;
+    rrep(b, B - 1, -1) {
+        int bit = (x >> b) & 1;
+        if (!trie[cur].down[bit]) return false;
+        cur = trie[cur].down[bit];
+    }
+    cur = 0;
+    rrep(b, B - 1, -1) {
+        int bit = (x >> b) & 1;
+        int nxt = trie[cur].down[bit];
+        if (--trie[nxt].cnt == 0) {
+            trie[cur].down[bit] = 0;
+            return true;
+        }
+        cur = nxt;
+    }
+    return true;
+};
+
+// returns best element y in trie maximizing (x ^ y)
+auto find_max_xor = [&](ll x) -> ll {
+    int cur = 0;
+    ll y = 0;
+    rrep(b, B - 1, -1) {
+        int bit = (x >> b) & 1;
+        int take = trie[cur].down[1 ^ bit] ? (1 ^ bit) : bit;
+        cur = trie[cur].down[take];
+        if (take) y |= (1LL << b);
+    }
+    return y;
 };
 
 
