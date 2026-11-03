@@ -578,36 +578,46 @@ int walk(int u, int tl, int tr) {
 
 // === strings ===
 
-class hstring {
-private:
-    static const ll M = (1LL << 61) - 1;
-    static const ll B;
-    static vll pow;
-    vll p_hash;
-    __int128 mul(ll a, ll b) const { return (__int128)a * b; }
-    ll mod_mul(ll a, ll b) const { return mul(a, b) % M; }
+struct hstring {
+    static const uint64_t M = (1ULL << 61) - 1;
+    inline static const uint64_t B = []() {
+        mt19937_64 rng(chrono::steady_clock::now().time_since_epoch().count());
+        return uniform_int_distribution<uint64_t>(300, M - 2)(rng);
+    }();
+    inline static vector<uint64_t> pow = {1};
 
-public:
-    hstring(const string& s) : p_hash(sz(s) + 1) {
-        while (sz(pow) <= sz(s)) {
-            pow.pb(mod_mul(pow.back(), B));
+    static uint64_t mod_mul(uint64_t a, uint64_t b) {
+        unsigned __int128 prod = (unsigned __int128)a * b;
+        uint64_t res = (uint64_t)(prod >> 61) + (uint64_t)(prod & M);
+        return res >= M ? res - M : res;
+    }
+    static uint64_t mod_add(uint64_t a, uint64_t b) {
+        uint64_t res = a + b;
+        return res >= M ? res - M : res;
+    }
+    static uint64_t mod_sub(uint64_t a, uint64_t b) {
+        return a >= b ? a - b : a + M - b;
+    }
+
+    vector<uint64_t> p_hash;
+
+    hstring() = default;
+    hstring(const string& s) : p_hash(s.size() + 1) {
+        while (pow.size() <= s.size()) {
+            pow.push_back(mod_mul(pow.back(), B));
         }
         p_hash[0] = 0;
-        rep(i, 0, sz(s)) {
-            p_hash[i + 1] = (mul(p_hash[i], B) + s[i]) % M;
+        for (int i = 0; i < (int)s.size(); ++i) {
+            p_hash[i + 1] = mod_add(mod_mul(p_hash[i], B), (unsigned char)s[i]);
         }
     }
 
     // [l, r] inclusive
     ll get_hash(int l, int r) const {
-        int w = r - l + 1;
-        ll val = p_hash[r + 1] - mod_mul(p_hash[l], pow[w]);
-        return (val + M) % M;
+        if (l > r) return 0;
+        return (ll)mod_sub(p_hash[r + 1], mod_mul(p_hash[l], pow[r - l + 1]));
     }
 };
-
-vll hstring::pow = {1};
-const ll hstring::B = uniform_int_distribution<ll>(257, (1LL << 61) - 2)(rng);
 
 // --- string trie ---
 const int ALPH = 26;
