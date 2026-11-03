@@ -578,6 +578,7 @@ int walk(int u, int tl, int tr) {
 
 // === strings ===
 
+// 61-bit mersenne prime (2^61 - 1); [l, r] inclusive
 struct hstring {
     static const uint64_t M = (1ULL << 61) - 1;
     inline static const uint64_t B = []() {
@@ -599,7 +600,7 @@ struct hstring {
         return a >= b ? a - b : a + M - b;
     }
 
-    vector<uint64_t> p_hash;
+    vector<uint64_t> p_hash = {0};
 
     hstring() = default;
     hstring(const string& s) : p_hash(s.size() + 1) {
@@ -610,6 +611,21 @@ struct hstring {
         for (int i = 0; i < (int)s.size(); ++i) {
             p_hash[i + 1] = mod_add(mod_mul(p_hash[i], B), (unsigned char)s[i]);
         }
+    }
+
+    void push_back(char c) {
+        while (pow.size() <= p_hash.size()) {
+            pow.push_back(mod_mul(pow.back(), B));
+        }
+        p_hash.push_back(mod_add(mod_mul(p_hash.back(), B), (unsigned char)c));
+    }
+
+    void pop_back() {
+        if (p_hash.size() > 1) p_hash.pop_back();
+    }
+
+    int size() const {
+        return (int)p_hash.size() - 1;
     }
 
     // [l, r] inclusive
